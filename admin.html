@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Admin</title></head>
+<body style="padding:12px">
+<h3>Inventory Admin</h3>
+<div>
+  <input id="name" placeholder="Item name">
+  <input id="stock" placeholder="Stock" type="number">
+  <button onclick="add()">Add/Set</button>
+</div>
+<div id="list" style="margin-top:12px"></div>
+<script>
+function refresh(){
+  fetch('/state').then(r=>r.json()).then(d=>{
+    const list = document.getElementById('list');
+    list.innerHTML = d.orders.map(i=>`<div>${i.orderNumber} : ${i.status}</div>`).join('');
+  });
+}
+function add(){
+  const name = document.getElementById('name').value;
+  const stock = parseInt(document.getElementById('stock').value||0);
+  fetch('/inventory/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,stock})}).then(()=>refresh());
+}
+refresh();
+</script>
+</body>
+</html>

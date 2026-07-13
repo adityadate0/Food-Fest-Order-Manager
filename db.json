@@ -12,7 +12,8 @@
           "qty": 2,
           "status": "collected"
         }
-      ]
+      ],
+      "completedAt": "2026-07-13T20:18:39.123Z"
     },
     {
       "id": 1783956551203,
@@ -26,21 +27,461 @@
           "qty": 1,
           "status": "collected"
         }
-      ]
+      ],
+      "completedAt": "2026-07-13T20:18:39.123Z"
     },
     {
       "id": 1783956559744,
       "orderNumber": "ORD559744",
       "createdAt": "2026-07-13T15:29:19.744Z",
-      "status": "ready",
+      "status": "completed",
       "items": [
         {
           "id": "1783956559744-0",
           "name": "Lassi",
           "qty": 1,
-          "status": "ready"
+          "status": "collected"
         }
-      ]
+      ],
+      "completedAt": "2026-07-13T20:18:39.123Z"
+    },
+    {
+      "id": 1783969087704,
+      "orderNumber": "ORD087704",
+      "createdAt": "2026-07-13T18:58:07.704Z",
+      "status": "completed",
+      "items": [
+        {
+          "id": "1783969087704-0",
+          "name": "Vada Pav",
+          "qty": 2,
+          "status": "collected"
+        }
+      ],
+      "completedAt": "2026-07-13T20:18:39.123Z"
+    },
+    {
+      "id": 1783969613609,
+      "orderNumber": "ORD613609",
+      "createdAt": "2026-07-13T19:06:53.609Z",
+      "status": "completed",
+      "items": [
+        {
+          "id": "1783969613609-0",
+          "name": "Chole Rice",
+          "qty": 1,
+          "status": "collected"
+        }
+      ],
+      "completedAt": "2026-07-13T20:18:39.123Z"
+    },
+    {
+      "id": 1783969636770,
+      "orderNumber": "ORD636770",
+      "createdAt": "2026-07-13T19:07:16.770Z",
+      "status": "completed",
+      "items": [
+        {
+          "id": "1783969636770-0",
+          "name": "Kokam Sherbet",
+          "qty": 1,
+          "status": "collected"
+        }
+      ],
+      "completedAt": "2026-07-13T20:18:39.123Z"
+    },
+    {
+      "id": 1783970605073,
+      "orderNumber": "ORD605073",
+      "createdAt": "2026-07-13T19:23:25.073Z",
+      "status": "completed",
+      "items": [
+        {
+          "id": "1783970605073-0",
+          "name": "Butter Chicken Rice",
+          "qty": 2,
+          "status": "collected"
+        }
+      ],
+      "completedAt": "2026-07-13T20:18:39.123Z"
+    },
+    {
+      "id": 1783970705159,
+      "orderNumber": "ORD705159",
+      "createdAt": "2026-07-13T19:25:05.159Z",
+      "status": "completed",
+      "items": [
+        {
+          "id": "1783970705159-0",
+          "name": "Kokam Sherbet",
+          "qty": 1,
+          "status": "collected"
+        }
+      ],
+      "completedAt": "2026-07-13T20:18:39.123Z"
+    },
+    {
+      "id": 1783970890873,
+      "orderNumber": "ORD890873",
+      "createdAt": "2026-07-13T19:28:10.873Z",
+      "status": "completed",
+      "items": [
+        {
+          "id": "1783970890873-0",
+          "name": "Lassi",
+          "qty": 1,
+          "status": "collected"
+        }
+      ],
+      "completedAt": "2026-07-13T20:18:39.123Z"
+    },
+    {
+      "id": 1783971220612,
+      "orderNumber": "ORD220612",
+      "createdAt": "2026-07-13T19:33:40.612Z",
+      "status": "completed",
+      "items": [
+        {
+          "id": "1783971220612-0",
+          "name": "Chole Rice",
+          "qty": 12,
+          "status": "collected"
+        }
+      ],
+      "completedAt": "2026-07-13T20:18:39.123Z"
+    },
+    {
+      "id": 1783971224844,
+      "orderNumber": "ORD224844",
+      "createdAt": "2026-07-13T19:33:44.844Z",
+      "status": "completed",
+      "items": [
+        {
+          "id": "1783971224844-0",
+          "name": "Vada Pav",
+          "qty": 12,
+          "status": "collected"
+        }
+      ],
+      "completedAt": "2026-07-13T20:18:39.123Z"
+    },
+    {
+      "id": 1783971227337,
+      "orderNumber": "ORD227337",
+      "createdAt": "2026-07-13T19:33:47.337Z",
+      "status": "completed",
+      "items": [
+        {
+          "id": "1783971227337-0",
+          "name": "Butter Chicken Rice",
+          "qty": 11,
+          "status": "collected"
+        }
+      ],
+      "completedAt": "2026-07-13T20:18:39.123Z"
+    },
+    {
+      "id": 1783971229370,
+      "orderNumber": "ORD229370",
+      "createdAt": "2026-07-13T19:33:49.370Z",
+      "status": "completed",
+      "items": [
+        {
+          "id": "1783971229370-0",
+          "name": "Kokam Sherbet",
+          "qty": 144,
+          "status": "collected"
+        }
+      ],
+      "completedAt": "2026-07-13T20:18:39.123Z"
+    },
+    {
+      "id": 1783971231369,
+      "orderNumber": "ORD231369",
+      "createdAt": "2026-07-13T19:33:51.369Z",
+      "status": "completed",
+      "items": [
+        {
+          "id": "1783971231369-0",
+          "name": "Samosa Chat",
+          "qty": 12,
+          "status": "collected"
+        }
+      ],
+      "completedAt": "2026-07-13T20:18:39.123Z"
+    },
+    {
+      "id": 1783971233937,
+      "orderNumber": "ORD233937",
+      "createdAt": "2026-07-13T19:33:53.937Z",
+      "status": "completed",
+      "items": [
+        {
+          "id": "1783971233937-0",
+          "name": "Lassi",
+          "qty": 18,
+          "status": "collected"
+        }
+      ],
+      "completedAt": "2026-07-13T20:18:39.123Z"
+    },
+    {
+      "id": 1783971537019,
+      "orderNumber": "ORD537019",
+      "createdAt": "2026-07-13T19:38:57.019Z",
+      "status": "completed",
+      "items": [
+        {
+          "id": "1783971537019-0",
+          "name": "Samosa Pav",
+          "qty": 1,
+          "status": "collected"
+        }
+      ],
+      "completedAt": "2026-07-13T20:18:39.123Z"
+    },
+    {
+      "id": 1783971551675,
+      "orderNumber": "ORD551675",
+      "createdAt": "2026-07-13T19:39:11.675Z",
+      "status": "completed",
+      "items": [
+        {
+          "id": "1783971551675-0",
+          "name": "Chole Rice",
+          "qty": 1,
+          "status": "collected"
+        }
+      ],
+      "completedAt": "2026-07-13T20:18:39.123Z"
+    },
+    {
+      "id": 1783971772218,
+      "orderNumber": "ORD772218",
+      "createdAt": "2026-07-13T19:42:52.218Z",
+      "status": "completed",
+      "items": [
+        {
+          "id": "1783971772218-0",
+          "name": "Samosa Pav",
+          "qty": 1,
+          "status": "collected"
+        }
+      ],
+      "completedAt": "2026-07-13T20:18:39.123Z"
+    },
+    {
+      "id": 1783971976819,
+      "orderNumber": "ORD976819",
+      "createdAt": "2026-07-13T19:46:16.819Z",
+      "status": "completed",
+      "items": [
+        {
+          "id": "1783971976819-0",
+          "name": "Bhel",
+          "qty": 1,
+          "status": "collected"
+        }
+      ],
+      "completedAt": "2026-07-13T20:18:39.123Z"
+    },
+    {
+      "id": 1783971978289,
+      "orderNumber": "ORD978289",
+      "createdAt": "2026-07-13T19:46:18.289Z",
+      "status": "completed",
+      "items": [
+        {
+          "id": "1783971978289-0",
+          "name": "Samosa Chat",
+          "qty": 1,
+          "status": "collected"
+        }
+      ],
+      "completedAt": "2026-07-13T20:18:39.123Z"
+    },
+    {
+      "id": 1783971979841,
+      "orderNumber": "ORD979841",
+      "createdAt": "2026-07-13T19:46:19.841Z",
+      "status": "completed",
+      "items": [
+        {
+          "id": "1783971979841-0",
+          "name": "Samosa Pav",
+          "qty": 1,
+          "status": "collected"
+        }
+      ],
+      "completedAt": "2026-07-13T20:18:39.123Z"
+    },
+    {
+      "id": 1783973014330,
+      "orderNumber": "ORD014330",
+      "createdAt": "2026-07-13T20:03:34.330Z",
+      "status": "completed",
+      "items": [
+        {
+          "id": "1783973014330-0",
+          "name": "Samosa Chat",
+          "qty": 1,
+          "status": "collected"
+        }
+      ],
+      "completedAt": "2026-07-13T20:18:39.123Z"
+    },
+    {
+      "id": 1783973257636,
+      "orderNumber": "ORD257636",
+      "createdAt": "2026-07-13T20:07:37.636Z",
+      "status": "completed",
+      "items": [
+        {
+          "id": "1783973257636-0",
+          "name": "Samosa Pav",
+          "qty": 1,
+          "status": "collected"
+        }
+      ],
+      "completedAt": "2026-07-13T20:18:39.123Z"
+    },
+    {
+      "id": 1783973259704,
+      "orderNumber": "ORD259704",
+      "createdAt": "2026-07-13T20:07:39.704Z",
+      "status": "completed",
+      "items": [
+        {
+          "id": "1783973259704-0",
+          "name": "Butter Chicken Rice",
+          "qty": 1,
+          "status": "collected"
+        }
+      ],
+      "completedAt": "2026-07-13T20:18:39.123Z"
+    },
+    {
+      "id": 1783973318607,
+      "orderNumber": "ORD318607",
+      "createdAt": "2026-07-13T20:08:38.607Z",
+      "status": "completed",
+      "items": [
+        {
+          "id": "1783973318607-0",
+          "name": "Chole Rice",
+          "qty": 1,
+          "status": "collected"
+        },
+        {
+          "id": "1783973318607-1",
+          "name": "Samosa Pav",
+          "qty": 1,
+          "status": "collected"
+        }
+      ],
+      "completedAt": "2026-07-13T20:18:39.123Z"
+    },
+    {
+      "id": 1783973706540,
+      "orderNumber": "ORD706540",
+      "createdAt": "2026-07-13T20:15:06.540Z",
+      "status": "completed",
+      "items": [
+        {
+          "id": "1783973706540-0",
+          "name": "Vada Pav",
+          "qty": 2,
+          "status": "collected"
+        }
+      ],
+      "completedAt": "2026-07-13T20:18:39.123Z"
+    },
+    {
+      "id": 1783973712738,
+      "orderNumber": "ORD712738",
+      "createdAt": "2026-07-13T20:15:12.738Z",
+      "status": "completed",
+      "items": [
+        {
+          "id": "1783973712738-0",
+          "name": "Chole Rice",
+          "qty": 1,
+          "status": "collected"
+        },
+        {
+          "id": "1783973712738-1",
+          "name": "Butter Chicken Rice",
+          "qty": 12,
+          "status": "collected"
+        }
+      ],
+      "completedAt": "2026-07-13T20:18:39.123Z"
+    },
+    {
+      "id": 1783973786678,
+      "orderNumber": "ORD786678",
+      "createdAt": "2026-07-13T20:16:26.678Z",
+      "status": "completed",
+      "items": [
+        {
+          "id": "1783973786678-0",
+          "name": "Samosa Pav",
+          "qty": 1,
+          "status": "collected"
+        }
+      ],
+      "completedAt": "2026-07-13T20:18:39.123Z"
+    },
+    {
+      "id": 1783973797793,
+      "orderNumber": "ORD797793",
+      "createdAt": "2026-07-13T20:16:37.793Z",
+      "status": "completed",
+      "items": [
+        {
+          "id": "1783973797793-0",
+          "name": "Vada Pav",
+          "qty": 1,
+          "status": "collected"
+        }
+      ],
+      "completedAt": "2026-07-13T20:18:39.123Z"
+    },
+    {
+      "id": 1783973862333,
+      "orderNumber": "ORD862333",
+      "createdAt": "2026-07-13T20:17:42.333Z",
+      "status": "completed",
+      "items": [
+        {
+          "id": "1783973862333-0",
+          "name": "Vada Pav",
+          "qty": 1,
+          "status": "collected"
+        }
+      ],
+      "completedAt": "2026-07-13T20:18:39.123Z"
+    },
+    {
+      "id": 1783973905960,
+      "orderNumber": "ORD905960",
+      "createdAt": "2026-07-13T20:18:25.960Z",
+      "status": "completed",
+      "items": [
+        {
+          "id": "1783973905960-0",
+          "name": "Butter Chicken Rice",
+          "qty": 1,
+          "status": "collected"
+        },
+        {
+          "id": "1783973905960-1",
+          "name": "Samosa Chat",
+          "qty": 3,
+          "status": "collected"
+        }
+      ],
+      "completedAt": "2026-07-13T20:18:39.123Z"
     }
   ]
 }

@@ -6,86 +6,473 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <style>
-.btn-item { width: 100%; height: 70px; font-size: 1.05rem; margin-bottom:8px; }
-.order-panel { max-height: 320px; overflow:auto; }
+:root{
+  --gap:10px;
+  --square-size:120px;
+  --card-bg:#fff;
+  --muted:#6c757d;
+  --placed-scale:1;
+  --placed-font:1rem;
+  --placed-padding:8px;
+}
+html,body{height:100%;margin:0;}
+body{
+  background:#f4f6f8;
+  padding:12px;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+  overflow:hidden;
+  box-sizing:border-box;
+}
+
+/* header */
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.header .controls{display:flex;gap:8px;align-items:center;}
+
+/* layout: auto 1fr keeps the menu tight and gives all extra space to orders */
+.layout{
+  display:grid;
+  grid-template-columns: auto 1fr;
+  gap:20px; 
+  height: calc(100vh - 48px);
+  align-items:start;
+}
+
+/* menu area */
+.menu-area{
+  display:flex;
+  flex-direction:column;
+  gap:var(--gap);
+  height:100%;
+  justify-content:flex-start;
+  align-items:stretch;
+  overflow:hidden;
+  width: fit-content;
+}
+
+/* grid of square buttons */
+.menu-grid{
+  display:grid;
+  grid-template-columns: repeat(2, var(--square-size));
+  column-gap: 12px; 
+  row-gap: var(--gap);
+  justify-items:start;
+  align-items:center;
+  width: fit-content;
+}
+
+/* square button */
+.square-btn{
+  width:var(--square-size);
+  height:var(--square-size);
+  background:var(--card-bg);
+  border-radius:8px;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  padding:6px;
+  border:1px solid rgba(0,0,0,0.06);
+  cursor:pointer;
+  box-shadow:0 6px 18px rgba(12,20,30,0.04);
+  transition:transform .06s ease, box-shadow .06s ease;
+  margin:0;
+}
+.square-btn:active{transform:translateY(2px);box-shadow:0 3px 8px rgba(12,20,30,0.06);}
+.square-btn img{
+  width:100%;
+  height:calc(var(--square-size) * 0.62);
+  object-fit:cover;
+  border-radius:6px;
+  display:block;
+}
+.square-btn .label{
+  margin-top:6px;
+  font-weight:600;
+  font-size:0.92rem;
+  text-align:center;
+  line-height:1.1;
+  padding:0 4px;
+}
+
+/* side panel */
+.side-panel{
+  background:var(--card-bg);
+  border-radius:8px;
+  padding:14px;
+  border-left:1px solid rgba(0,0,0,0.04);
+  height:100%;
+  box-sizing:border-box;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  overflow:hidden;
+}
+
+/* orders grid */
+.orders-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  height: calc(100% - 36px);
+  overflow: hidden;
+}
+
+/* forces the parent columns to stop growing so scrollbar triggers correctly */
+.orders-grid > div {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Native momentum scrolling for iOS/Android tablets */
+.orders-column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  padding-right: 10px; 
+  -webkit-overflow-scrolling: touch; 
+}
+
+/* Fat, touchable scrollbar styling */
+.orders-column::-webkit-scrollbar {
+  width: 18px; 
+}
+.orders-column::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.03); 
+  border-radius: 10px;
+}
+.orders-column::-webkit-scrollbar-thumb {
+  background: #aab2bd; 
+  border-radius: 10px;
+  border: 4px solid var(--card-bg); 
+}
+.orders-column::-webkit-scrollbar-thumb:active {
+  background: #6c757d; 
+}
+
+/* placed order card */
+.placed-card{
+  background:#fbfcfd;
+  border-radius:8px;
+  padding:var(--placed-padding);
+  border:1px solid rgba(0,0,0,0.03);
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  transform-origin: top left;
+  transform: scale(var(--placed-scale));
+  font-size: calc(var(--placed-font));
+  box-sizing:border-box;
+}
+.placed-card .meta{display:flex;justify-content:space-between;align-items:center;}
+.placed-card .items{font-size:0.95rem;color:#333;}
+.placed-card .card-actions{display:flex;gap:6px;justify-content:flex-end;margin-top:6px;}
+.placed-card .card-actions .btn{padding:6px 8px;font-size:0.85rem;}
+
+/* keypad modal */
+.keypad { display:grid; grid-template-columns: repeat(3,1fr); gap:8px; }
+.key { padding:12px; font-size:1.1rem; border-radius:8px; background:#f1f3f5; border:1px solid rgba(0,0,0,0.04); text-align:center; cursor:pointer; user-select:none; }
+.key:active{transform:translateY(1px);}
+.qty-display { font-size:1.6rem; text-align:center; padding:8px 0; font-weight:700; }
 </style>
 </head>
-<body class="p-3">
-<h3>Front Desk</h3>
-<div class="row" id="menu"></div>
-<hr>
-<div>
-  <h5>Current Order</h5>
-  <div id="current-items"></div>
-  <button id="placeOrder" class="btn btn-success mt-2">Place Order</button>
-</div>
-<hr>
-<h5>Ready for Pickup</h5>
-<div id="ready-orders" class="order-panel"></div>
+<body>
+  <div class="header">
+    <h3 style="margin:0">Front Desk</h3>
+    <div class="controls">
+      <button class="btn btn-outline-dark" onclick="openHistory()">History</button>
+      <button class="btn btn-outline-secondary" onclick="refresh()">Refresh</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="menu-area">
+      <div id="menuGrid" class="menu-grid" aria-label="menu"></div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-start;margin-top:6px;">
+        <button id="placeCartOrder" class="btn btn-success">Place Cart Order</button>
+        <button id="clearCart" class="btn btn-outline-secondary">Clear Cart</button>
+      </div>
+    </div>
+
+    <aside class="side-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div class="section-title" style="font-weight:700; font-size:1.2rem;">Orders</div>
+        <div class="small-muted">Placed / Ready</div>
+      </div>
+
+      <div class="orders-grid">
+        <div>
+          <div style="font-weight:700;margin-bottom:6px; color:#495057;">Placed Orders</div>
+          <div id="placed-orders" class="orders-column"></div>
+        </div>
+        <div>
+          <div style="font-weight:700;margin-bottom:6px; color:#495057;">Ready for Pickup</div>
+          <div id="ready-orders" class="orders-column"></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Cancel Order Modal -->
+  <div class="modal fade" id="cancelModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header"><h6 class="modal-title text-danger" style="margin:0;">Cancel Order</h6></div>
+        <div class="modal-body">
+          Are you sure you want to cancel order <strong id="cancelTargetOrder"></strong>?
+        </div>
+        <div class="modal-footer d-flex justify-content-between">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Keep It</button>
+          <button id="confirmCancelBtn" class="btn btn-danger">Yes, Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Keypad Modal -->
+  <div class="modal fade" id="keypadModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header"><h6 class="modal-title" id="keypadTitle">Quantity</h6></div>
+        <div class="modal-body">
+          <div class="qty-display" id="qtyDisplay">1</div>
+          <div class="keypad" id="keypad">
+            <div class="key" data-key="1">1</div>
+            <div class="key" data-key="2">2</div>
+            <div class="key" data-key="3">3</div>
+            <div class="key" data-key="4">4</div>
+            <div class="key" data-key="5">5</div>
+            <div class="key" data-key="6">6</div>
+            <div class="key" data-key="7">7</div>
+            <div class="key" data-key="8">8</div>
+            <div class="key" data-key="9">9</div>
+            <div class="key" data-key="C">C</div>
+            <div class="key" data-key="0">0</div>
+            <div class="key" data-key="←">←</div>
+          </div>
+        </div>
+        <div class="modal-footer d-flex justify-content-between">
+          <button id="keypadCancel" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <div>
+            <button id="keypadAddToCart" class="btn btn-outline-primary me-2">Add to Cart</button>
+            <button id="keypadPlace" class="btn btn-success">Place Order</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- History Modal -->
+  <div class="modal fade" id="historyModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">Order History</h5></div>
+        <div class="modal-body" id="historyBody"></div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
 <script src="/socket.io/socket.io.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 const MENU = [
-  "Butter Chicken Rice",
-  "Chole Rice",
-  "Vada Pav",
-  "Samosa Pav",
-  "Bhel",
-  "Lassi",
-  "Kokam Sherbet",
-  "Samosa Chat"
+  {name:"Butter Chicken Rice", slug:"butter-chicken-rice"},
+  {name:"Chole Rice", slug:"chole-rice"},
+  {name:"Vada Pav", slug:"vada-pav"},
+  {name:"Samosa Pav", slug:"samosa-pav"},
+  {name:"Bhel", slug:"bhel"},
+  {name:"Samosa Chat", slug:"samosa-chat"}
 ];
-const socket = io();
-let currentOrder = [];
 
-function renderMenu(){
-  const menu = document.getElementById('menu');
-  menu.innerHTML = '';
-  MENU.forEach(name=>{
-    const col = document.createElement('div'); col.className='col-6';
-    const btn = document.createElement('button'); btn.className='btn btn-primary btn-item';
-    btn.innerText = name;
-    btn.onclick = ()=>addToOrder(name);
-    col.appendChild(btn); menu.appendChild(col);
+const socket = io();
+let cart = [];
+let keypadTarget = null;
+const keypadModal = new bootstrap.Modal(document.getElementById('keypadModal'));
+let qtyValue = '1';
+
+// Cancel Modal logic
+const cancelModal = new bootstrap.Modal(document.getElementById('cancelModal'));
+let cancelTargetOrderData = null;
+
+function promptCancelOrder(orderNumber, items) {
+  cancelTargetOrderData = { orderNumber, items };
+  document.getElementById('cancelTargetOrder').innerText = orderNumber;
+  cancelModal.show();
+}
+
+document.getElementById('confirmCancelBtn').onclick = () => {
+  if (!cancelTargetOrderData) return;
+  cancelTargetOrderData.items.forEach(it => {
+    fetch('/order/delete-item', {
+      method: 'POST', 
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({orderNumber: cancelTargetOrderData.orderNumber, itemId: it.id})
+    });
   });
-}
-function addToOrder(name){
-  const existing = currentOrder.find(x=>x.name===name);
-  if(existing) existing.qty++;
-  else currentOrder.push({name, qty:1});
-  renderCurrent();
-}
-function renderCurrent(){
-  document.getElementById('current-items').innerHTML = currentOrder.map(i=>`${i.name} x ${i.qty}`).join('<br>') || '<em>empty</em>';
-}
-document.getElementById('placeOrder').onclick = ()=>{
-  if(currentOrder.length===0) return;
-  fetch('/order', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({items:currentOrder})})
-  .then(()=>{ currentOrder = []; renderCurrent(); });
+  cancelTargetOrderData = null;
+  cancelModal.hide();
+  setTimeout(refresh, 300);
 };
 
-function refresh(){
-  fetch('/state').then(r=>r.json()).then(data=>{
-    const ready = [];
-    data.orders.forEach(o=>{
-      o.items.forEach(it=>{
-        if(it.status === 'ready') ready.push({orderNumber: o.orderNumber, item: it});
-      });
-    });
-    const container = document.getElementById('ready-orders');
-    container.innerHTML = '';
-    const grouped = {};
-    ready.forEach(r=>{ grouped[r.orderNumber] = grouped[r.orderNumber] || []; grouped[r.orderNumber].push(r.item); });
-    Object.keys(grouped).forEach(ord=>{
-      const div = document.createElement('div'); div.className='card p-2 mb-2';
-      div.innerHTML = `<strong>${ord}</strong><br>` + grouped[ord].map(i=>`${i.name} x ${i.qty}`).join('<br>');
-      const btn = document.createElement('button'); btn.className='btn btn-sm btn-success mt-2'; btn.innerText='Collect';
-      btn.onclick = ()=>collectOrder(ord);
-      div.appendChild(btn);
-      container.appendChild(div);
-    });
+
+function computeSquareSize(){
+  const headerHeight = document.querySelector('.header').getBoundingClientRect().height + 8;
+  const layoutHeight = window.innerHeight - headerHeight - 20;
+  const gap = 10;
+  const rows = 4;
+  const maxByHeight = Math.floor((layoutHeight - (rows - 1) * gap) / rows);
+  const size = Math.max(72, Math.min(180, maxByHeight));
+  document.documentElement.style.setProperty('--square-size', size + 'px');
+}
+
+function renderMenu(){
+  const grid = document.getElementById('menuGrid');
+  grid.innerHTML = '';
+  MENU.forEach(it=>{
+    const btn = document.createElement('button');
+    btn.className = 'square-btn';
+    btn.setAttribute('data-slug', it.slug);
+    btn.setAttribute('data-name', it.name);
+    btn.innerHTML = `<img src="/images/${it.slug}.jpg" onerror="this.src='/images/placeholder.jpg'"><div class="label">${it.name}</div>`;
+    btn.onclick = ()=> openKeypad(it.name, it.slug);
+    grid.appendChild(btn);
   });
 }
+
+function openKeypad(name, slug, placedOrderRef=null){
+  keypadTarget = {name, slug, placedOrderRef};
+  qtyValue = placedOrderRef ? String(placedOrderRef.currentQty || 1) : '1';
+  document.getElementById('keypadTitle').innerText = placedOrderRef ? `Edit ${name}` : `Quantity for ${name}`;
+  updateQtyDisplay();
+  keypadModal.show();
+}
+function updateQtyDisplay(){ document.getElementById('qtyDisplay').innerText = qtyValue || '0'; }
+
+document.getElementById('keypad').addEventListener('click', (e)=>{
+  const key = e.target.dataset.key;
+  if(!key) return;
+  if(key === 'C'){ qtyValue = '0'; }
+  else if(key === '←'){ qtyValue = qtyValue.length > 1 ? qtyValue.slice(0,-1) : '0'; }
+  else {
+    if(qtyValue === '0') qtyValue = key;
+    else qtyValue = (qtyValue + key).slice(0,4);
+  }
+  if(qtyValue === '') qtyValue = '0';
+  updateQtyDisplay();
+});
+
+document.getElementById('keypadAddToCart').onclick = () => {
+  const q = Math.max(1, parseInt(qtyValue || '1'));
+  if(!keypadTarget) return;
+  if(keypadTarget.placedOrderRef){
+    fetch('/order/edit-item', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ orderNumber: keypadTarget.placedOrderRef.orderNumber, itemId: keypadTarget.placedOrderRef.itemId, newName: keypadTarget.name, newQty: q })
+    }).then(()=>{ keypadModal.hide(); keypadTarget=null; refresh(); });
+    return;
+  }
+  const existing = cart.find(x=>x.name === keypadTarget.name);
+  if(existing) existing.qty += q;
+  else cart.push({name: keypadTarget.name, qty: q});
+  keypadModal.hide();
+  keypadTarget = null;
+  renderCartBadge();
+};
+
+document.getElementById('keypadPlace').onclick = () => {
+  const q = Math.max(1, parseInt(qtyValue || '1'));
+  if(!keypadTarget) return;
+  const payload = [{ name: keypadTarget.name, qty: q }];
+  fetch('/order', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({items: payload})})
+    .then(()=>{ keypadModal.hide(); keypadTarget=null; refresh(); });
+};
+
+document.getElementById('placeCartOrder').onclick = () => {
+  if(cart.length === 0){ alert('Cart is empty. Tap items to add them.'); return; }
+  fetch('/order', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({items: cart})})
+    .then(()=>{ cart = []; renderCartBadge(); refresh(); });
+};
+document.getElementById('clearCart').onclick = () => { cart = []; renderCartBadge(); };
+
+function renderCartBadge(){
+  const btn = document.getElementById('placeCartOrder');
+  const count = cart.reduce((s,i)=>s+i.qty,0);
+  btn.innerText = count > 0 ? `Place Cart Order (${count})` : 'Place Cart Order';
+}
+
+function renderPlaced(orders){
+  const container = document.getElementById('placed-orders');
+  container.innerHTML = '';
+  
+  // Keeps order in the left column if ANY item is still being made
+  const activeOrders = orders.filter(o => o.status === 'placed' || o.status === 'in_progress');
+  
+  activeOrders.forEach(o=>{
+    const card = document.createElement('div'); card.className='placed-card';
+    const meta = document.createElement('div'); meta.className='meta';
+    meta.innerHTML = `<div><strong>${o.orderNumber}</strong></div><div class="small-muted">${new Date(o.createdAt).toLocaleTimeString()}</div>`;
+    card.appendChild(meta);
+    const items = document.createElement('div'); items.className='items';
+    items.innerHTML = o.items.map(it=>`${it.name} x ${it.qty} <small class="text-muted">(${it.status})</small>`).join('<br>');
+    card.appendChild(items);
+
+    const actions = document.createElement('div'); actions.className='card-actions';
+    const edit = document.createElement('button'); edit.className='btn btn-sm btn-outline-primary'; edit.innerText='Edit';
+    edit.onclick = () => openEditOrderDialog(o);
+    
+    // Bind to our new Cancel Modal instead of browser popup
+    const cancel = document.createElement('button'); cancel.className='btn btn-sm btn-outline-danger'; cancel.innerText='Cancel';
+    cancel.onclick = () => promptCancelOrder(o.orderNumber, o.items);
+    
+    actions.appendChild(edit); actions.appendChild(cancel);
+    card.appendChild(actions);
+
+    container.appendChild(card);
+  });
+  autoScalePlacedCards();
+}
+
+function openEditOrderDialog(order){
+  const names = order.items.map(it=>`${it.name} x ${it.qty}`).join('\n');
+  const pick = prompt(`Edit which item? Paste exact item name from list:\n${names}`);
+  if(!pick) return;
+  const found = order.items.find(it => it.name.toLowerCase() === pick.toLowerCase());
+  if(!found){ alert('Item not found. Use exact name from list.'); return; }
+  openKeypad(found.name, null, { orderNumber: order.orderNumber, itemId: found.id, currentQty: found.qty });
+}
+
+function renderReady(orders){
+  const container = document.getElementById('ready-orders');
+  container.innerHTML = '';
+  
+  // Only shows orders where EVERY single item is complete (status === ready)
+  const fullyReadyOrders = orders.filter(o => o.status === 'ready');
+  
+  fullyReadyOrders.forEach(o => {
+    const div = document.createElement('div'); 
+    div.className = 'placed-card';
+    div.innerHTML = `<div><strong>${o.orderNumber}</strong></div>
+                     <div style="margin-top:6px">${o.items.map(i=>`${i.name} x ${i.qty}`).join('<br>')}</div>`;
+    
+    const btn = document.createElement('button'); 
+    btn.className = 'btn btn-sm btn-success'; 
+    btn.style.marginTop = '8px'; 
+    btn.innerText = 'Complete Order'; 
+    btn.onclick = () => collectOrder(o.orderNumber);
+    
+    div.appendChild(btn);
+    container.appendChild(div);
+  });
+  autoScalePlacedCards();
+}
+
 function collectOrder(orderNumber){
   fetch('/state').then(r=>r.json()).then(data=>{
     const items = [];
@@ -100,11 +487,66 @@ function collectOrder(orderNumber){
   });
 }
 
+function openHistory(){
+  fetch('/history').then(r=>r.json()).then(data=>{
+    const body = document.getElementById('historyBody');
+    body.innerHTML = '';
+    data.orders.slice().reverse().forEach(o=>{
+      const card = document.createElement('div');
+      card.className = 'placed-card';
+      card.innerHTML = `<div><strong>${o.orderNumber}</strong></div>
+        <div>Placed: ${new Date(o.createdAt).toLocaleString()}</div>
+        <div>Completed: ${o.completedAt ? new Date(o.completedAt).toLocaleString() : '—'}</div>
+        <hr>
+        ${o.items.map(i => `${i.name} x ${i.qty} (${i.status})`).join('<br>')}`;
+      body.appendChild(card);
+    });
+    new bootstrap.Modal(document.getElementById('historyModal')).show();
+  });
+}
+
+function refresh(){
+  fetch('/state').then(r=>r.json()).then(data=>{
+    renderPlaced(data.orders);
+    renderReady(data.orders);
+  });
+}
+
 socket.on('order:new', refresh);
 socket.on('order:update', refresh);
-renderMenu();
-renderCurrent();
-refresh();
+
+function autoScalePlacedCards(){
+  const ordersGrid = document.querySelector('.orders-grid');
+  if(!ordersGrid) return;
+  const availableH = ordersGrid.getBoundingClientRect().height - 8;
+  const placedCount = document.getElementById('placed-orders').children.length;
+  const readyCount = document.getElementById('ready-orders').children.length;
+  const totalCards = Math.max(1, placedCount + readyCount);
+  const rows = Math.ceil(totalCards / 2);
+  const gap = 8;
+  const desiredPerCard = (availableH - (rows - 1) * gap) / rows;
+  const baseCardHeight = 80;
+  let scale = desiredPerCard / baseCardHeight;
+  scale = Math.max(0.6, Math.min(1, scale));
+  const placedFont = Math.max(11, Math.round(16 * scale)) + 'px';
+  const placedPadding = Math.max(5, Math.round(8 * scale)) + 'px';
+  document.documentElement.style.setProperty('--placed-scale', scale);
+  document.documentElement.style.setProperty('--placed-font', placedFont);
+  document.documentElement.style.setProperty('--placed-padding', placedPadding);
+}
+
+function init(){
+  computeSquareSize();
+  renderMenu();
+  renderCartBadge();
+  refresh();
+  setTimeout(()=> autoScalePlacedCards(), 120);
+}
+window.addEventListener('resize', ()=>{
+  computeSquareSize();
+  setTimeout(()=> autoScalePlacedCards(), 80);
+});
+init();
 </script>
 </body>
 </html>

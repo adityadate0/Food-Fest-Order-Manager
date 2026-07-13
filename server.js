@@ -22,14 +22,22 @@ app.use(express.static(path.join(__dirname)));
 // ensure data file exists
 if(!fs.existsSync(DATA_FILE)) saveData({ orders: [] });
 
+// Return only active orders (hide completed)
 app.get('/state', (req, res) => {
+  const data = loadData();
+  const active = data.orders.filter(o => o.status !== 'completed');
+  res.json({ orders: active });
+});
+
+// Return full history including completed
+app.get('/history', (req, res) => {
   const data = loadData();
   res.json({ orders: data.orders });
 });
 
-// create order
+// Create order
 app.post('/order', (req, res) => {
-  const { items } = req.body; // [{name, qty}]
+  const { items } = req.body;
   if(!items || !Array.isArray(items) || items.length === 0) return res.status(400).json({ error: 'no items' });
   const data = loadData();
   const id = Date.now();
@@ -52,9 +60,9 @@ app.post('/order', (req, res) => {
   res.json({ ok: true, order });
 });
 
-// update single item status
+// Update single item status (kitchen)
 app.post('/item/update', (req, res) => {
-  const { itemId, status } = req.body; // status: in_progress | ready | collected
+  const { itemId, status } = req.body;
   if(!itemId || !status) return res.status(400).json({ error: 'missing' });
   const data = loadData();
   let changed = false;
@@ -66,27 +74,73 @@ app.post('/item/update', (req, res) => {
       }
     }
     // update order status based on items
-    const allPlaced = order.items.every(i => i.status === 'placed');
     const anyInProgress = order.items.some(i => i.status === 'in_progress');
     const allReady = order.items.every(i => i.status === 'ready' || i.status === 'collected');
     const allCollected = order.items.every(i => i.status === 'collected');
-    if(allCollected) order.status = 'completed';
-    else if(allReady) order.status = 'ready';
-    else if(anyInProgress) order.status = 'in_progress';
-    else order.status = 'placed';
+
+    if (allCollected) {
+      order.status = 'completed';
+      order.completedAt = new Date().toISOString();
+    } else if (allReady) {
+      order.status = 'ready';
+    } else if (anyInProgress) {
+      order.status = 'in_progress';
+    } else {
+      order.status = 'placed';
+    }
   }
-  if(changed) {
+  if(changed){
     saveData(data);
     io.emit('order:update');
-    return res.json({ ok: true });
+    return res.json({ ok:true });
   } else {
     return res.status(404).json({ error: 'item not found' });
   }
 });
 
+// Edit an item inside a placed order (change name and/or qty)
+app.post('/order/edit-item', (req, res) => {
+  const { orderNumber, itemId, newName, newQty } = req.body;
+  if(!orderNumber || !itemId) return res.status(400).json({ error: 'missing' });
+  const data = loadData();
+  let changed = false;
+  for(const order of data.orders){
+    if(order.orderNumber === orderNumber){
+      for(const item of order.items){
+        if(item.id === itemId){
+          if(newName) item.name = newName;
+          if(newQty !== null && newQty !== undefined) item.qty = parseInt(newQty) || item.qty;
+          changed = true;
+        }
+      }
+    }
+  }
+  if(changed){ saveData(data); io.emit('order:update'); return res.json({ ok:true }); }
+  return res.status(404).json({ error:'not found' });
+});
+
+// Delete an item from an order (or delete whole order if no items left)
+app.post('/order/delete-item', (req, res) => {
+  const { orderNumber, itemId } = req.body;
+  if(!orderNumber || !itemId) return res.status(400).json({ error: 'missing' });
+  const data = loadData();
+  let changed = false;
+  for(const order of data.orders){
+    if(order.orderNumber === orderNumber){
+      const before = order.items.length;
+      order.items = order.items.filter(it => it.id !== itemId);
+      if(order.items.length !== before) changed = true;
+    }
+  }
+  data.orders = data.orders.filter(o => o.items.length > 0);
+  if(changed){ saveData(data); io.emit('order:update'); return res.json({ ok:true }); }
+  return res.status(404).json({ error:'not found' });
+});
+
 io.on('connection', socket => {
-  // no special handlers required; clients listen to events
+  console.log('client connected', socket.id);
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const HOST = process.env.HOST || '0.0.0.0';
+server.listen(PORT, HOST, () => console.log(`Server running on ${HOST}:${PORT}`));
