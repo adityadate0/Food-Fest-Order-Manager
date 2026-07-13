@@ -1,0 +1,62 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Kitchen</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>.item-row{margin-bottom:8px}</style>
+</head>
+<body class="p-3">
+<h3>Kitchen</h3>
+<div id="queue"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+function refresh(){
+  fetch('/state').then(r=>r.json()).then(data=>{
+    renderQueue(data.orders);
+  });
+}
+function renderQueue(orders){
+  const container = document.getElementById('queue');
+  container.innerHTML = '';
+  // show newest first
+  orders.slice().reverse().forEach(o=>{
+    const card = document.createElement('div'); card.className='card p-2 mb-2';
+    card.innerHTML = `<strong>${o.orderNumber}</strong> <small class="text-muted">${new Date(o.createdAt).toLocaleTimeString()}</small>`;
+    o.items.forEach(it=>{
+      const row = document.createElement('div'); row.className='d-flex justify-content-between align-items-center item-row';
+      row.innerHTML = `<div>${it.name} x ${it.qty} <small class="text-muted">${it.status}</small></div>`;
+      const btns = document.createElement('div');
+      if(it.status === 'placed'){
+        const s = document.createElement('button'); s.className='btn btn-sm btn-warning me-1'; s.innerText='Start';
+        s.onclick = ()=>update(it.id,'in_progress');
+        const d = document.createElement('button'); d.className='btn btn-sm btn-success'; d.innerText='Complete';
+        d.onclick = ()=>update(it.id,'ready');
+        btns.appendChild(s); btns.appendChild(d);
+      } else if(it.status === 'in_progress'){
+        const d = document.createElement('button'); d.className='btn btn-sm btn-success'; d.innerText='Complete';
+        d.onclick = ()=>update(it.id,'ready');
+        btns.appendChild(d);
+      } else {
+        const badge = document.createElement('span'); badge.className='badge bg-success'; badge.innerText='Ready';
+        btns.appendChild(badge);
+      }
+      row.appendChild(btns);
+      card.appendChild(row);
+    });
+    container.appendChild(card);
+  });
+}
+function update(itemId, status){
+  fetch('/item/update', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({itemId, status})})
+  .then(()=>refresh());
+}
+socket.on('order:new', refresh);
+socket.on('order:update', refresh);
+refresh();
+</script>
+</body>
+</html>
