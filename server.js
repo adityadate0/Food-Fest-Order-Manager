@@ -54,24 +54,36 @@ app.get('/history', (req, res) => {
   res.json({ orders: data.orders });
 });
 
+// Create order
 app.post('/order', (req, res) => {
   const { items } = req.body;
   if(!items || !Array.isArray(items) || items.length === 0) return res.status(400).json({ error: 'no items' });
   const data = loadData();
   const id = Date.now();
   const orderNumber = 'ORD' + String(id).slice(-6);
+  
+  // Maps item status cleanly depending on item category
+  const mappedItems = items.map((it, idx) => {
+    const isDrink = it.name === 'Lassi' || it.name === 'Kokam Sherbet';
+    return {
+      id: `${id}-${idx}`,
+      name: it.name,
+      qty: it.qty || 1,
+      status: isDrink ? 'ready' : 'placed' // Drinks start as ready immediately
+    };
+  });
+
+  // Automatically mark the global order status as ready if it contains ONLY drinks
+  const allReady = mappedItems.every(i => i.status === 'ready');
+
   const order = {
     id,
     orderNumber,
     createdAt: new Date().toISOString(),
-    status: 'placed',
-    items: items.map((it, idx) => ({
-      id: `${id}-${idx}`,
-      name: it.name,
-      qty: it.qty || 1,
-      status: 'placed'
-    }))
+    status: allReady ? 'ready' : 'placed',
+    items: mappedItems
   };
+  
   data.orders.push(order);
   saveData(data);
   

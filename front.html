@@ -295,7 +295,9 @@ const MENU = [
   {name:"Vada Pav", slug:"vada-pav"},
   {name:"Samosa Pav", slug:"samosa-pav"},
   {name:"Bhel", slug:"bhel"},
-  {name:"Samosa Chat", slug:"samosa-chat"}
+  {name:"Samosa Chat", slug:"samosa-chat"},
+  {name:"Lassi", slug:"lassi"},
+  {name:"Kokam Sherbet", slug:"kokum-sherbet"}
 ];
 
 const socket = io({ query: { role: 'front' } });
@@ -331,7 +333,7 @@ document.getElementById('confirmCancelBtn').onclick = () => {
 
 function computeSquareSize(){
   const headerHeight = document.querySelector('.header').getBoundingClientRect().height + 8;
-  const layoutHeight = window.innerHeight - headerHeight - 20;
+  const layoutHeight = window.innerHeight - headerHeight - 20 - 55;
   const gap = 10;
   const rows = 4;
   const maxByHeight = Math.floor((layoutHeight - (rows - 1) * gap) / rows);

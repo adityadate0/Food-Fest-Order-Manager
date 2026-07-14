@@ -1,3 +1,18 @@
 {
-  "orders": []
+  "orders": [
+    {
+      "id": 1784018086905,
+      "orderNumber": "ORD086905",
+      "createdAt": "2026-07-14T08:34:46.905Z",
+      "status": "ready",
+      "items": [
+        {
+          "id": "1784018086905-0",
+          "name": "Lassi",
+          "qty": 1,
+          "status": "ready"
+        }
+      ]
+    }
+  ]
 }

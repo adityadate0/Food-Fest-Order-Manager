@@ -125,25 +125,33 @@ window.addEventListener('resize', computeCardWidth);
 function renderQueue(orders){
   const container = document.getElementById('queue');
   container.innerHTML = '';
-  // newest first
+  
   orders.slice().reverse().forEach(o=>{
+    // 1. Filter out drink items meant exclusively for the front counter
+    const kitchenItems = o.items.filter(it => it.name !== 'Lassi' && it.name !== 'Kokam Sherbet');
+    
+    // 2. If the order only contained drinks, skip rendering this card for the kitchen entirely
+    if (kitchenItems.length === 0) return;
+
     const card = document.createElement('div'); card.className='card-play';
     card.id = `order-${o.orderNumber}`;
     card.innerHTML = `<div class="card-header"><div><strong>${o.orderNumber}</strong><div class="small-muted">${new Date(o.createdAt).toLocaleTimeString()}</div></div><div><span class="badge bg-${o.status==='ready'?'warning':'info'}">${o.status}</span></div></div>`;
     const itemsWrap = document.createElement('div'); itemsWrap.className='card-items';
-    o.items.forEach(it=>{
+    
+    // 3. Render ONLY the actual food items to the cooks
+    kitchenItems.forEach(it=>{
       const item = document.createElement('div'); item.className='item-card';
       const title = document.createElement('div'); title.className='title'; title.innerText = it.name;
       const qty = document.createElement('div'); qty.className='qty'; qty.innerText = `Quantity: ${it.qty}`;
       const btnRow = document.createElement('div'); btnRow.className='btn-row';
-      // three buttons in one horizontal row
+      
       const start = document.createElement('button'); start.className='btn btn-sm btn-outline-warning'; start.innerText='Start';
       start.onclick = ()=> update(it.id,'in_progress');
       const complete = document.createElement('button'); complete.className='btn btn-sm btn-success'; complete.innerText='Complete';
       complete.onclick = ()=> update(it.id,'ready');
       const collect = document.createElement('button'); collect.className='btn btn-sm btn-outline-secondary'; collect.innerText='Mark Collected';
       collect.onclick = ()=> update(it.id,'collected');
-      // show/hide depending on status
+      
       if(it.status === 'placed'){ btnRow.appendChild(start); btnRow.appendChild(complete); btnRow.appendChild(collect); }
       else if(it.status === 'in_progress'){ btnRow.appendChild(complete); btnRow.appendChild(collect); }
       else if(it.status === 'ready'){ btnRow.appendChild(collect); }
@@ -152,7 +160,6 @@ function renderQueue(orders){
       itemsWrap.appendChild(item);
     });
     card.appendChild(itemsWrap);
-    // removed the extra "Mark Collected" button at bottom right as requested
     container.appendChild(card);
   });
 }
