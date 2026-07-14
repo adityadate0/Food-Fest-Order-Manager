@@ -19,23 +19,32 @@ const io = new Server(server);
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 
-// ensure data file exists
 if(!fs.existsSync(DATA_FILE)) saveData({ orders: [] });
 
-// Return only active orders (hide completed)
+// Runtime Excel tracking reference
+let currentCsvFile = null;
+
+function appendOrderToExcel(order) {
+  if (!currentCsvFile) return;
+  let rows = "";
+  order.items.forEach(it => {
+    // Generates pristine, comma-separated rows easily opened by Microsoft Excel
+    rows += `${order.orderNumber},${order.createdAt},"${it.name}",${it.qty},${it.status}\n`;
+  });
+  fs.appendFileSync(currentCsvFile, rows, 'utf8');
+}
+
 app.get('/state', (req, res) => {
   const data = loadData();
   const active = data.orders.filter(o => o.status !== 'completed');
   res.json({ orders: active });
 });
 
-// Return full history including completed
 app.get('/history', (req, res) => {
   const data = loadData();
   res.json({ orders: data.orders });
 });
 
-// Create order
 app.post('/order', (req, res) => {
   const { items } = req.body;
   if(!items || !Array.isArray(items) || items.length === 0) return res.status(400).json({ error: 'no items' });
@@ -56,11 +65,14 @@ app.post('/order', (req, res) => {
   };
   data.orders.push(order);
   saveData(data);
+  
+  // Log directly to the active session Excel sheet
+  appendOrderToExcel(order);
+  
   io.emit('order:new', order);
   res.json({ ok: true, order });
 });
 
-// Update single item status (kitchen)
 app.post('/item/update', (req, res) => {
   const { itemId, status } = req.body;
   if(!itemId || !status) return res.status(400).json({ error: 'missing' });
@@ -73,7 +85,6 @@ app.post('/item/update', (req, res) => {
         changed = true;
       }
     }
-    // update order status based on items
     const anyInProgress = order.items.some(i => i.status === 'in_progress');
     const allReady = order.items.every(i => i.status === 'ready' || i.status === 'collected');
     const allCollected = order.items.every(i => i.status === 'collected');
@@ -98,7 +109,6 @@ app.post('/item/update', (req, res) => {
   }
 });
 
-// Edit an item inside a placed order (change name and/or qty)
 app.post('/order/edit-item', (req, res) => {
   const { orderNumber, itemId, newName, newQty } = req.body;
   if(!orderNumber || !itemId) return res.status(400).json({ error: 'missing' });
@@ -119,7 +129,6 @@ app.post('/order/edit-item', (req, res) => {
   return res.status(404).json({ error:'not found' });
 });
 
-// Delete an item from an order (or delete whole order if no items left)
 app.post('/order/delete-item', (req, res) => {
   const { orderNumber, itemId } = req.body;
   if(!orderNumber || !itemId) return res.status(400).json({ error: 'missing' });
@@ -137,8 +146,36 @@ app.post('/order/delete-item', (req, res) => {
   return res.status(404).json({ error:'not found' });
 });
 
+// Socket routing orchestration
 io.on('connection', socket => {
-  console.log('client connected', socket.id);
+  const role = socket.handshake.query.role;
+  console.log(`Client tied to stall network: ${socket.id} (Role: ${role})`);
+
+  // Triggers whenever the Front Desk is newly loaded/refreshed
+  if (role === 'front') {
+    // 1. Instantly clear runtime history out of db.json
+    saveData({ orders: [] });
+    io.emit('order:update'); 
+
+    // 2. Initialize an isolated, uniquely named Excel sheet
+    const now = new Date();
+    const timestamp = now.toISOString().replace(/T/, '_').replace(/[:.]/g, '-').slice(0, 19);
+    currentCsvFile = path.join(__dirname, `festival_orders_${timestamp}.csv`);
+    
+    const headers = "Order Number,Timestamp,Item Name,Quantity,Initial Status\n";
+    fs.writeFileSync(currentCsvFile, headers, 'utf8');
+    console.log(`Generated spreadsheet logging track: ${currentCsvFile}`);
+  }
+
+  socket.on('disconnect', () => {
+    if (role === 'front') {
+      console.log(`Front Desk page closed. Log preserved on disk: ${currentCsvFile}`);
+      currentCsvFile = null;
+      // Wipe structural db state clean on close to safeguard next fresh interface spin
+      saveData({ orders: [] });
+      io.emit('order:update');
+    }
+  });
 });
 
 const PORT = process.env.PORT || 3000;

@@ -292,7 +292,7 @@ const MENU = [
   {name:"Samosa Chat", slug:"samosa-chat"}
 ];
 
-const socket = io();
+const socket = io({ query: { role: 'front' } });
 let cart = [];
 let keypadTarget = null;
 const keypadModal = new bootstrap.Modal(document.getElementById('keypadModal'));
