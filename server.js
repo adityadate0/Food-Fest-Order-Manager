@@ -58,27 +58,42 @@ function getNetworkInfo() {
   return connections;
 }
 
-/* Root Route: Serves a beautiful, responsive Server Connection Dashboard */
+/* Root Route: Serves a robust Server Connection Dashboard with individual URL tracks per card */
 app.get('/', (req, res) => {
   const networks = getNetworkInfo();
   const PORT = process.env.PORT || 3000;
   
-  // Choose primary IP discovered, fallback to localhost if offline
-  const primaryIP = networks.length > 0 ? networks[0].ip : '127.0.0.1';
+  // Dynamically map every network profile into its own self-contained link console
+  let networkSectionsHtml = networks.map(net => `
+    <div class="card mb-4 shadow-sm border-start border-primary border-4">
+      <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center">
+        <span class="text-secondary font-monospace small fw-bold">${net.interfaceName}</span>
+        <span class="badge bg-primary px-2 py-1">${net.ip}</span>
+      </div>
+      <div class="card-body bg-white py-3">
+        <p class="text-muted small mb-3">If your tablets are connected to this network, enter these exact web directions:</p>
+        
+        <div class="mb-3">
+          <label class="form-label font-monospace xs-label fw-bold text-primary mb-1">FRONT DESK TABLET URL</label>
+          <div class="p-2 bg-light border rounded font-monospace small text-break select-all text-primary fw-bold">
+            http://${net.ip}:${PORT}/front.html
+          </div>
+        </div>
 
-  let networkCardsHtml = networks.map(net => `
-    <div class="card mb-2 shadow-sm border-start border-primary border-4">
-      <div class="card-body py-2 px-3 d-flex justify-content-between align-items-center">
-        <span class="text-secondary font-monospace small">${net.interfaceName}</span>
-        <strong class="text-dark fs-5">${net.ip}</strong>
+        <div class="mb-1">
+          <label class="form-label font-monospace xs-label fw-bold text-danger mb-1">KITCHEN MONITOR TABLET URL</label>
+          <div class="p-2 bg-light border rounded font-monospace small text-break select-all text-danger fw-bold">
+            http://${net.ip}:${PORT}/kitchen.html
+          </div>
+        </div>
       </div>
     </div>
   `).join('');
 
   if (networks.length === 0) {
-    networkCardsHtml = `
-      <div class="alert alert-warning py-2 small">
-        ⚠️ No active Wi-Fi or Hotspot network detected. Connect devices to test terminal synchronization.
+    networkSectionsHtml = `
+      <div class="alert alert-warning py-3 text-center">
+        ⚠️ No active Wi-Fi, Local LAN, or Hotspot network detected. Please connect to a network.
       </div>
     `;
   }
@@ -94,40 +109,32 @@ app.get('/', (req, res) => {
     <style>
       body { background-color: #f4f7f6; font-family: system-ui, -apple-system, sans-serif; }
       .dashboard-card { max-width: 650px; background: white; border-radius: 16px; box-shadow: 0 12px 40px rgba(0,0,0,0.06); }
-      .url-box { background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; font-family: monospace; font-size: 1.05rem; }
+      .xs-label { font-size: 0.75rem; letter-spacing: 0.5px; }
+      .select-all { user-select: all; -webkit-user-select: all; cursor: pointer; }
     </style>
   </head>
   <body class="d-flex align-items-center justify-content-center min-vh-100 p-3">
     <div class="dashboard-card w-100 p-4 p-md-5">
       <div class="text-center mb-4">
         <h2 class="fw-bold text-dark m-0">Summer Festival 2026</h2>
-        <p class="text-muted small uppercase tracking-wider mt-1">Stall Order Management Control Panel</p>
+        <p class="text-muted small text-uppercase tracking-wider mt-1">Stall Order Management Control Panel</p>
       </div>
 
-      <h5 class="fw-bold mb-3 text-secondary">📡 Active Laptop IPs</h5>
-      ${networkCardsHtml}
+      <h5 class="fw-bold mb-3 text-secondary d-flex align-items-center gap-2">
+        <span>📡 Available Network Channels</span>
+      </h5>
+      
+      ${networkSectionsHtml}
 
       <hr class="my-4 opacity-10">
 
-      <h5 class="fw-bold mb-3 text-success">📱 Tablet Device URLs</h5>
-      <p class="text-muted small">Connect your tablets to the laptop hotspot, open their web browsers, and enter these exact web directions:</p>
-      
-      <div class="mb-3">
-        <label class="form-label font-monospace small fw-bold text-primary">FRONT DESK TABLET URL</label>
-        <div class="p-3 url-box text-break select-all text-primary fw-bold">http://${primaryIP}:${PORT}/front.html</div>
-      </div>
-
-      <div class="mb-4">
-        <label class="form-label font-monospace small fw-bold text-danger">KITCHEN MONITOR TABLET URL</label>
-        <div class="p-3 url-box text-break select-all text-danger fw-bold">http://${primaryIP}:${PORT}/kitchen.html</div>
-      </div>
-
-      <div class="row g-2 pt-2">
+      <h5 class="fw-bold mb-3 text-dark">💻 Host Laptop Shortcuts</h5>
+      <div class="row g-2">
         <div class="col-6">
-          <a href="/front.html" target="_blank" class="btn btn-outline-primary w-100 py-2 font-weight-bold">Launch Front Desk Here</a>
+          <a href="/front.html" target="_blank" class="btn btn-outline-primary w-100 py-2 fw-semibold">Launch Front Desk</a>
         </div>
         <div class="col-6">
-          <a href="/kitchen.html" target="_blank" class="btn btn-outline-danger w-100 py-2 font-weight-bold">Launch Kitchen Here</a>
+          <a href="/kitchen.html" target="_blank" class="btn btn-outline-danger w-100 py-2 fw-semibold">Launch Kitchen</a>
         </div>
       </div>
     </div>

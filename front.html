@@ -306,12 +306,17 @@ const MENU = [
   {name:"Kokam Sherbet", slug:"kokum-sherbet"}
 ];
 
-const socket = io({ query: { role: 'front' } });
-let cart = [];
-let keypadTarget = null;
-const keypadModal = new bootstrap.Modal(document.getElementById('keypadModal'));
-let qtyValue = '1';
-let isFirstTap = true;
+// Hardened Network State Initialization
+let socket = null;
+try {
+  if (typeof io !== 'undefined') {
+    socket = io({ query: { role: 'front' } });
+  } else {
+    console.warn("⚠️ Socket.io library failed to load. Running UI in standalone fallback mode.");
+  }
+} catch (networkError) {
+  console.error("Network initialization halted:", networkError);
+}
 
 // Cancel Modal logic
 const cancelModal = new bootstrap.Modal(document.getElementById('cancelModal'));
@@ -336,7 +341,6 @@ document.getElementById('confirmCancelBtn').onclick = () => {
   cancelModal.hide();
   setTimeout(refresh, 300);
 };
-
 
 function computeSquareSize(){
   const headerHeight = document.querySelector('.header').getBoundingClientRect().height + 8;
@@ -385,10 +389,9 @@ document.getElementById('keypad').addEventListener('click', (e)=>{
     isFirstTap = false; 
   }
   else {
-    // If it's the very first tap, completely overwrite the default number
     if(isFirstTap) {
       qtyValue = key; 
-      isFirstTap = false; // Turn off so subsequent numbers append normally
+      isFirstTap = false; 
     } else {
       if(qtyValue === '0') qtyValue = key;
       else qtyValue = (qtyValue + key).slice(0,4);
@@ -440,8 +443,6 @@ function renderCartBadge(){
 function renderPlaced(orders){
   const container = document.getElementById('placed-orders');
   container.innerHTML = '';
-  
-  // Keeps order in the left column if ANY item is still being made
   const activeOrders = orders.filter(o => o.status === 'placed' || o.status === 'in_progress');
   
   activeOrders.forEach(o=>{
@@ -457,13 +458,11 @@ function renderPlaced(orders){
     const edit = document.createElement('button'); edit.className='btn btn-sm btn-outline-primary'; edit.innerText='Edit';
     edit.onclick = () => openEditOrderDialog(o);
     
-    // Bind to our new Cancel Modal instead of browser popup
     const cancel = document.createElement('button'); cancel.className='btn btn-sm btn-outline-danger'; cancel.innerText='Cancel';
     cancel.onclick = () => promptCancelOrder(o.orderNumber, o.items);
     
     actions.appendChild(edit); actions.appendChild(cancel);
     card.appendChild(actions);
-
     container.appendChild(card);
   });
   autoScalePlacedCards();
@@ -481,8 +480,6 @@ function openEditOrderDialog(order){
 function renderReady(orders){
   const container = document.getElementById('ready-orders');
   container.innerHTML = '';
-  
-  // Only shows orders where EVERY single item is complete (status === ready)
   const fullyReadyOrders = orders.filter(o => o.status === 'ready');
   
   fullyReadyOrders.forEach(o => {
@@ -536,14 +533,20 @@ function openHistory(){
 }
 
 function refresh(){
-  fetch('/state').then(r=>r.json()).then(data=>{
-    renderPlaced(data.orders);
-    renderReady(data.orders);
-  });
+  fetch('/state')
+    .then(r => r.ok ? r.json() : Promise.reject())
+    .then(data => {
+      renderPlaced(data.orders);
+      renderReady(data.orders);
+    })
+    .catch(() => console.log("Waiting for network backend to sync data hooks..."));
 }
 
-socket.on('order:new', refresh);
-socket.on('order:update', refresh);
+// Bind live event streams safely if socket interface is active
+if (socket) {
+  socket.on('order:new', refresh);
+  socket.on('order:update', refresh);
+}
 
 function autoScalePlacedCards(){
   const ordersGrid = document.querySelector('.orders-grid');
@@ -564,29 +567,23 @@ function autoScalePlacedCards(){
   document.documentElement.style.setProperty('--placed-font', placedFont);
   document.documentElement.style.setProperty('--placed-padding', placedPadding);
 }
-/* Quit application handler */
+
 function quitApp() {
-  // Trigger an internal confirmation modal instead of a generic alert
   if (confirm("Are you sure you want to quit the front desk? This will close your active session and finalize the Excel log.")) {
-    
-    // 1. Drop out of HTML5 fullscreen mode if the tablet is currently using it
     if (document.fullscreenElement || document.webkitFullscreenElement) {
       if (document.exitFullscreen) {
         document.exitFullscreen().catch(err => console.log(err));
       } else if (document.webkitExitFullscreen) {
-        document.webkitExitFullscreen(); // Safari/iOS tablet support
+        document.webkitExitFullscreen();
       }
     }
-
-    // 2. Explicitly cut the socket line. This forces server.js to run its 'disconnect' routine immediately.
     if (socket) {
       socket.disconnect();
     }
-
-    // 3. Clear the workspace by navigating away to a blank tab
     window.location.href = 'about:blank';
   }
 }
+
 function init(){
   computeSquareSize();
   renderMenu();
@@ -594,11 +591,14 @@ function init(){
   refresh();
   setTimeout(()=> autoScalePlacedCards(), 120);
 }
+
 window.addEventListener('resize', ()=>{
   computeSquareSize();
   setTimeout(()=> autoScalePlacedCards(), 80);
 });
+
 init();
 </script>
+
 </body>
 </html>
