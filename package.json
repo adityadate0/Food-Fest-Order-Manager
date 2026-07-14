@@ -2,8 +2,17 @@
   "name": "simple-kds",
   "version": "1.0.0",
   "main": "server.js",
+  "bin": "server.js",
   "scripts": {
     "start": "node server.js"
+  },
+  "pkg": {
+    "assets": [
+      "front.html",
+      "kitchen.html",
+      "admin.html",
+      "images/MMS_logo.png"
+    ]
   },
   "dependencies": {
     "express": "^4.18.2",
