@@ -75,7 +75,7 @@ body{
 </style>
 </head>
 <body>
-<div class="header" style="display: flex; justify-content: space-between; align-items: center; width: 100%; position: relative;">
+  <div class="header" style="display: flex; justify-content: space-between; align-items: center; width: 100%; position: relative;">
     <!-- Left: Bold Role Identifier -->
     <h3 style="margin: 0; font-weight: 700;">Kitchen</h3>
     
@@ -85,12 +85,15 @@ body{
       <img src="images/MMS_logo.png" alt="Mandal Logo" style="height: 42px; width: auto; object-fit: contain;">
     </div>
     
+    <!-- Right side controls: Sound button is safely placed here inside the view boundary -->
     <div class="controls">
+      <button id="audioToggle" class="btn btn-outline-danger me-2" onclick="toggleAudio()">🔔 Sound: Off</button>
       <button class="btn btn-outline-dark me-2" onclick="openHistory()">History</button>
       <button class="btn btn-outline-secondary" onclick="refresh()">Refresh</button>
     </div>
   </div>
 
+  <!-- The queue takes up the screen space safely now without stumping over stray trailing rows -->
   <div id="queue"></div>
 
   <!-- History Modal -->
@@ -111,20 +114,23 @@ body{
 <script>
 const socket = io({ query: { role: 'kitchen' } });
 
+/* Audio System State Variables */
+let audioEnabled = false;
+let audioCtx = null;
+
 /* compute card width so cards fit inside the available area without causing page scroll */
 function computeCardWidth(){
   const headerHeight = document.querySelector('.header').getBoundingClientRect().height + 12;
-  const availH = window.innerHeight - headerHeight - 24;
   const availW = window.innerWidth - 24;
-  // choose number of columns based on width
+  
   let cols = 3;
   if(availW < 700) cols = 1;
   else if(availW < 1100) cols = 2;
   else cols = 3;
-  // compute width per card including gaps
+  
   const gap = 12;
   const width = Math.floor((availW - (cols-1)*gap) / cols);
-  const cardWidth = Math.max(220, Math.min(320, width)); // clamp
+  const cardWidth = Math.max(220, Math.min(320, width));
   document.documentElement.style.setProperty('--card-width', cardWidth + 'px');
 }
 window.addEventListener('resize', computeCardWidth);
@@ -135,10 +141,7 @@ function renderQueue(orders){
   container.innerHTML = '';
   
   orders.slice().reverse().forEach(o=>{
-    // 1. Filter out drink items meant exclusively for the front counter
     const kitchenItems = o.items.filter(it => it.name !== 'Lassi' && it.name !== 'Kokam Sherbet');
-    
-    // 2. If the order only contained drinks, skip rendering this card for the kitchen entirely
     if (kitchenItems.length === 0) return;
 
     const card = document.createElement('div'); card.className='card-play';
@@ -146,7 +149,6 @@ function renderQueue(orders){
     card.innerHTML = `<div class="card-header"><div><strong>${o.orderNumber}</strong><div class="small-muted">${new Date(o.createdAt).toLocaleTimeString()}</div></div><div><span class="badge bg-${o.status==='ready'?'warning':'info'}">${o.status}</span></div></div>`;
     const itemsWrap = document.createElement('div'); itemsWrap.className='card-items';
     
-    // 3. Render ONLY the actual food items to the cooks
     kitchenItems.forEach(it=>{
       const item = document.createElement('div'); item.className='item-card';
       const title = document.createElement('div'); title.className='title'; title.innerText = it.name;
@@ -178,7 +180,6 @@ function update(itemId, status){
   .then(()=> {
     setTimeout(()=> {
       fetch('/state').then(r=>r.json()).then(data=>{
-        // remove completed orders with animation
         const active = new Set(data.orders.map(o=>o.orderNumber));
         document.querySelectorAll('[id^="order-"]').forEach(el=>{
           const ord = el.id.replace('order-','');
@@ -190,25 +191,6 @@ function update(itemId, status){
         renderQueue(data.orders);
       });
     }, 200);
-  });
-}
-
-/* mark collected for an order (collect ready items) */
-function collectOrder(orderNumber){
-  fetch('/state').then(r=>r.json()).then(data=>{
-    const items = [];
-    data.orders.forEach(o=>{
-      if(o.orderNumber === orderNumber){
-        o.items.forEach(it => { if(it.status === 'ready') items.push(it.id); });
-      }
-    });
-    items.forEach(id => {
-      fetch('/item/update', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({itemId:id, status:'collected'})});
-    });
-    setTimeout(()=> {
-      const el = document.getElementById(`order-${orderNumber}`);
-      if(el){ el.classList.add('fade-out'); setTimeout(()=> el.remove(), 400); }
-    }, 300);
   });
 }
 
@@ -233,27 +215,90 @@ function refresh(){
     renderQueue(data.orders);
   });
 }
-socket.on('order:new', refresh);
+
+socket.on('order:new', (order) => {
+  if (audioEnabled && order && order.items) {
+    // Check if the order contains at least one item that is NOT a front-counter drink
+    const hasFoodItems = order.items.some(it => it.name !== 'Lassi' && it.name !== 'Kokam Sherbet');
+    
+    if (hasFoodItems) {
+      playKitchenChime();
+    }
+  }
+  refresh();
+});
 socket.on('order:update', refresh);
+
+/* Toggles kitchen notification sound capabilities */
+function toggleAudio() {
+  const btn = document.getElementById('audioToggle');
+  
+  if (!audioEnabled) {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (AudioContext) {
+      audioCtx = new AudioContext();
+    }
+    
+    audioEnabled = true;
+    btn.className = 'btn btn-success me-2';
+    btn.innerText = '🔊 Sound: On';
+    
+    playKitchenChime();
+  } else {
+    audioEnabled = false;
+    btn.className = 'btn btn-outline-danger me-2';
+    btn.innerText = '🔔 Sound: Off';
+  }
+}
+
+/* Synthesizes a clean, dual-tone electronic restaurant bell chime */
+function playKitchenChime() {
+  if (!audioCtx) return;
+  
+  try {
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    
+    // Tone 1: High crisp ding (A5 note)
+    const osc1 = audioCtx.createOscillator();
+    const gain1 = audioCtx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(880, audioCtx.currentTime); 
+    gain1.gain.setValueAtTime(0.25, audioCtx.currentTime);
+    gain1.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+    
+    osc1.connect(gain1);
+    gain1.connect(audioCtx.destination);
+    osc1.start();
+    osc1.stop(audioCtx.currentTime + 0.4);
+    
+    // Tone 2: Rich harmony accent delayed by 100ms (C6 note)
+    setTimeout(() => {
+      if (!audioCtx) return;
+      const osc2 = audioCtx.createOscillator();
+      const gain2 = audioCtx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(1046.5, audioCtx.currentTime); 
+      gain2.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+      
+      osc2.connect(gain2);
+      gain2.connect(audioCtx.destination);
+      osc2.start();
+      osc2.stop(audioCtx.currentTime + 0.3);
+    }, 100);
+    
+  } catch (e) {
+    console.error("Audio playback interrupted:", e);
+  }
+}
 
 /* init */
 function init(){
   computeCardWidth();
   refresh();
 }
-function computeCardWidth(){
-  // compute card width to fit 1..3 columns depending on viewport
-  const availW = window.innerWidth - 24;
-  let cols = 3;
-  if(availW < 700) cols = 1;
-  else if(availW < 1100) cols = 2;
-  else cols = 3;
-  const gap = 12;
-  const width = Math.floor((availW - (cols-1)*gap) / cols);
-  const cardWidth = Math.max(220, Math.min(320, width));
-  document.documentElement.style.setProperty('--card-width', cardWidth + 'px');
-}
-window.addEventListener('resize', ()=>{ computeCardWidth(); refresh(); });
 init();
 </script>
 </body>
