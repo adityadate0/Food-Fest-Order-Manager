@@ -190,7 +190,6 @@ body{
       <img src="images/MMS_logo.png" alt="Mandal Logo" style="height: 42px; width: auto; object-fit: contain;">
     </div>
     
-    
     <div class="controls">
       <button class="btn btn-outline-dark" onclick="openHistory()">History</button>
       <button class="btn btn-outline-secondary" onclick="refresh()">Refresh</button>
@@ -272,7 +271,7 @@ body{
             <button id="keypadAddToCart" class="btn btn-outline-primary" style="flex: 1; padding: 12px 0; font-weight: 600; font-size: 0.95rem; border-radius: 8px;">Add to Cart</button>
             <button id="keypadPlace" class="btn btn-success" style="flex: 1; padding: 12px 0; font-weight: 600; font-size: 0.95rem; border-radius: 8px;">Place Order</button>
           </div>
-        <!-- Bottom Row: Cancel spans the entire width beneath to avoid mis-clicks -->
+          <!-- Bottom Row: Cancel spans the entire width beneath to avoid mis-clicks -->
           <button id="keypadCancel" class="btn btn-secondary w-100" data-bs-dismiss="modal" style="padding: 10px 0; font-weight: 600; font-size: 0.95rem; border-radius: 8px; background-color: #6c757d;">Cancel</button>
         </div>
       </div>
@@ -318,8 +317,15 @@ try {
   console.error("Network initialization halted:", networkError);
 }
 
-// Cancel Modal logic
+// RESTORED: App Architecture Core State Trackers
+let cart = [];
+let keypadTarget = null;
+let qtyValue = '1';
+let isFirstTap = true;
+
+// RESTORED: Core Modal Interface Instances
 const cancelModal = new bootstrap.Modal(document.getElementById('cancelModal'));
+const keypadModal = new bootstrap.Modal(document.getElementById('keypadModal'));
 let cancelTargetOrderData = null;
 
 function promptCancelOrder(orderNumber, items) {
@@ -470,7 +476,7 @@ function renderPlaced(orders){
 
 function openEditOrderDialog(order){
   const names = order.items.map(it=>`${it.name} x ${it.qty}`).join('\n');
-  const pick = prompt(`Edit which item? Paste exact item name from list:\n${names}`);
+  const pick = prompt('Edit which item? Paste exact item name from list:\n' + names);
   if(!pick) return;
   const found = order.items.find(it => it.name.toLowerCase() === pick.toLowerCase());
   if(!found){ alert('Item not found. Use exact name from list.'); return; }
@@ -542,7 +548,6 @@ function refresh(){
     .catch(() => console.log("Waiting for network backend to sync data hooks..."));
 }
 
-// Bind live event streams safely if socket interface is active
 if (socket) {
   socket.on('order:new', refresh);
   socket.on('order:update', refresh);
@@ -599,6 +604,5 @@ window.addEventListener('resize', ()=>{
 
 init();
 </script>
-
 </body>
 </html>
