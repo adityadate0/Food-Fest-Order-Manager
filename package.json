@@ -10,8 +10,7 @@
     "assets": [
       "front.html",
       "kitchen.html",
-      "admin.html",
-      "images/MMS_logo.png"
+      "admin.html"
     ]
   },
   "dependencies": {

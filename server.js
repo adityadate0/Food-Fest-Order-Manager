@@ -5,7 +5,8 @@ const { Server } = require('socket.io');
 const fs = require('fs');
 const path = require('path');
 
-const DATA_FILE = path.join(__dirname, 'db.json');
+// FIX: Changed __dirname to process.cwd() so db.json writes natively to the host disk
+const DATA_FILE = path.join(process.cwd(), 'db.json');
 function loadData(){
   try { return JSON.parse(fs.readFileSync(DATA_FILE)); }
   catch(e){ return { orders: [] }; }
@@ -17,27 +18,25 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 app.use(express.json());
+// NOTE: express.static safely keeps __dirname because static assets are baked inside the binary snapshot
 app.use(express.static(path.join(__dirname)));
+app.use('/images', express.static(path.join(process.cwd(), 'images')));
 
 if(!fs.existsSync(DATA_FILE)) saveData({ orders: [] });
 
-// Runtime Excel tracking reference
 let currentCsvFile = null;
 
-/* Appends items in the newly requested format: Item Name, Quantity, Time, Date, Order Number, Status */
 function appendOrderToExcel(order) {
   if (!currentCsvFile) return;
   let rows = "";
   
-  // Parse timestamp into distinct, Excel-friendly Date and Time components
   const now = new Date(order.createdAt);
   const pad = (num) => String(num).padStart(2, '0');
   
   const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-  const dateStr = now.toISOString().split('T')[0]; // Outputs standard YYYY-MM-DD
+  const dateStr = now.toISOString().split('T')[0];
   
   order.items.forEach(it => {
-    // Columns ordered exactly to your layout requirements with double quotes removed from item names
     rows += `${it.name},${it.qty},${timeStr},${dateStr},${order.orderNumber},${it.status}\n`;
   });
   fs.appendFileSync(currentCsvFile, rows, 'utf8');
@@ -54,7 +53,6 @@ app.get('/history', (req, res) => {
   res.json({ orders: data.orders });
 });
 
-// Create order
 app.post('/order', (req, res) => {
   const { items } = req.body;
   if(!items || !Array.isArray(items) || items.length === 0) return res.status(400).json({ error: 'no items' });
@@ -62,18 +60,16 @@ app.post('/order', (req, res) => {
   const id = Date.now();
   const orderNumber = 'ORD' + String(id).slice(-6);
   
-  // Maps item status cleanly depending on item category
   const mappedItems = items.map((it, idx) => {
     const isDrink = it.name === 'Lassi' || it.name === 'Kokam Sherbet';
     return {
       id: `${id}-${idx}`,
       name: it.name,
       qty: it.qty || 1,
-      status: isDrink ? 'ready' : 'placed' // Drinks start as ready immediately
+      status: isDrink ? 'ready' : 'placed'
     };
   });
 
-  // Automatically mark the global order status as ready if it contains ONLY drinks
   const allReady = mappedItems.every(i => i.status === 'ready');
 
   const order = {
@@ -86,8 +82,6 @@ app.post('/order', (req, res) => {
   
   data.orders.push(order);
   saveData(data);
-  
-  // Log directly to the active session Excel sheet
   appendOrderToExcel(order);
   
   io.emit('order:new', order);
@@ -167,21 +161,20 @@ app.post('/order/delete-item', (req, res) => {
   return res.status(404).json({ error:'not found' });
 });
 
-// Socket routing orchestration
 io.on('connection', socket => {
   const role = socket.handshake.query.role;
   console.log(`Client tied to stall network: ${socket.id} (Role: ${role})`);
 
-  // Triggers whenever the Front Desk is newly loaded/refreshed
   if (role === 'front') {
     saveData({ orders: [] });
     io.emit('order:update'); 
 
     const now = new Date();
     const timestamp = now.toISOString().replace(/T/, '_').replace(/[:.]/g, '-').slice(0, 19);
-    currentCsvFile = path.join(__dirname, `festival_orders_${timestamp}.csv`);
     
-    // Updated header track match order specifications exactly
+    // FIX: Changed __dirname to process.cwd() so spreadsheets generate cleanly next to the executable file
+    currentCsvFile = path.join(process.cwd(), `festival_orders_${timestamp}.csv`);
+    
     const headers = "Item Name,Quantity,Time,Date,Order Number,Status\n";
     fs.writeFileSync(currentCsvFile, headers, 'utf8');
     console.log(`Generated spreadsheet logging track: ${currentCsvFile}`);
