@@ -24,12 +24,21 @@ if(!fs.existsSync(DATA_FILE)) saveData({ orders: [] });
 // Runtime Excel tracking reference
 let currentCsvFile = null;
 
+/* Appends items in the newly requested format: Item Name, Quantity, Time, Date, Order Number, Status */
 function appendOrderToExcel(order) {
   if (!currentCsvFile) return;
   let rows = "";
+  
+  // Parse timestamp into distinct, Excel-friendly Date and Time components
+  const now = new Date(order.createdAt);
+  const pad = (num) => String(num).padStart(2, '0');
+  
+  const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  const dateStr = now.toISOString().split('T')[0]; // Outputs standard YYYY-MM-DD
+  
   order.items.forEach(it => {
-    // Generates pristine, comma-separated rows easily opened by Microsoft Excel
-    rows += `${order.orderNumber},${order.createdAt},"${it.name}",${it.qty},${it.status}\n`;
+    // Columns ordered exactly to your layout requirements with double quotes removed from item names
+    rows += `${it.name},${it.qty},${timeStr},${dateStr},${order.orderNumber},${it.status}\n`;
   });
   fs.appendFileSync(currentCsvFile, rows, 'utf8');
 }
@@ -153,16 +162,15 @@ io.on('connection', socket => {
 
   // Triggers whenever the Front Desk is newly loaded/refreshed
   if (role === 'front') {
-    // 1. Instantly clear runtime history out of db.json
     saveData({ orders: [] });
     io.emit('order:update'); 
 
-    // 2. Initialize an isolated, uniquely named Excel sheet
     const now = new Date();
     const timestamp = now.toISOString().replace(/T/, '_').replace(/[:.]/g, '-').slice(0, 19);
     currentCsvFile = path.join(__dirname, `festival_orders_${timestamp}.csv`);
     
-    const headers = "Order Number,Timestamp,Item Name,Quantity,Initial Status\n";
+    // Updated header track match order specifications exactly
+    const headers = "Item Name,Quantity,Time,Date,Order Number,Status\n";
     fs.writeFileSync(currentCsvFile, headers, 'utf8');
     console.log(`Generated spreadsheet logging track: ${currentCsvFile}`);
   }
@@ -171,7 +179,6 @@ io.on('connection', socket => {
     if (role === 'front') {
       console.log(`Front Desk page closed. Log preserved on disk: ${currentCsvFile}`);
       currentCsvFile = null;
-      // Wipe structural db state clean on close to safeguard next fresh interface spin
       saveData({ orders: [] });
       io.emit('order:update');
     }
