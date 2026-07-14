@@ -75,9 +75,17 @@ body{
 </style>
 </head>
 <body>
-  <div class="header">
-    <h3 style="margin:0">Kitchen</h3>
-    <div>
+<div class="header" style="display: flex; justify-content: space-between; align-items: center; width: 100%; position: relative;">
+    <!-- Left: Bold Role Identifier -->
+    <h3 style="margin: 0; font-weight: 700;">Kitchen</h3>
+    
+    <!-- Center: Event Title followed immediately by the Logo -->
+    <div style="position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; white-space: nowrap;">
+      <h3 style="margin: 0; font-weight: 700;">Summer Festival 2026</h3>
+      <img src="images/MMS_logo.png" alt="Mandal Logo" style="height: 42px; width: auto; object-fit: contain;">
+    </div>
+    
+    <div class="controls">
       <button class="btn btn-outline-dark me-2" onclick="openHistory()">History</button>
       <button class="btn btn-outline-secondary" onclick="refresh()">Refresh</button>
     </div>
