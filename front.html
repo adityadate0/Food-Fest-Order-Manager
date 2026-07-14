@@ -186,6 +186,12 @@ body{
       <button class="btn btn-outline-dark" onclick="openHistory()">History</button>
       <button class="btn btn-outline-secondary" onclick="refresh()">Refresh</button>
     </div>
+    <div class="controls">
+      <button class="btn btn-outline-dark" onclick="openHistory()">History</button>
+      <button class="btn btn-outline-secondary" onclick="refresh()">Refresh</button>
+  <!-- Native Quit Button -->
+      <button class="btn btn-danger" onclick="quitApp()">Quit</button>
+    </div>
   </div>
 
   <div class="layout">
@@ -535,7 +541,29 @@ function autoScalePlacedCards(){
   document.documentElement.style.setProperty('--placed-font', placedFont);
   document.documentElement.style.setProperty('--placed-padding', placedPadding);
 }
+/* Quit application handler */
+function quitApp() {
+  // Trigger an internal confirmation modal instead of a generic alert
+  if (confirm("Are you sure you want to quit the front desk? This will close your active session and finalize the Excel log.")) {
+    
+    // 1. Drop out of HTML5 fullscreen mode if the tablet is currently using it
+    if (document.fullscreenElement || document.webkitFullscreenElement) {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(err => console.log(err));
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen(); // Safari/iOS tablet support
+      }
+    }
 
+    // 2. Explicitly cut the socket line. This forces server.js to run its 'disconnect' routine immediately.
+    if (socket) {
+      socket.disconnect();
+    }
+
+    // 3. Clear the workspace by navigating away to a blank tab
+    window.location.href = 'about:blank';
+  }
+}
 function init(){
   computeSquareSize();
   renderMenu();
