@@ -266,12 +266,14 @@ body{
             <div class="key" data-key="←">←</div>
           </div>
         </div>
-        <div class="modal-footer d-flex justify-content-between">
-          <button id="keypadCancel" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <div>
-            <button id="keypadAddToCart" class="btn btn-outline-primary me-2">Add to Cart</button>
-            <button id="keypadPlace" class="btn btn-success">Place Order</button>
+        <div class="modal-footer d-flex flex-column gap-2" style="padding: 12px 16px; border-top: 1px solid rgba(0,0,0,0.08);">
+          <!-- Top Row: Primary workflows share equal, high-visibility widths -->
+          <div class="w-100 d-flex gap-2">
+            <button id="keypadAddToCart" class="btn btn-outline-primary" style="flex: 1; padding: 12px 0; font-weight: 600; font-size: 0.95rem; border-radius: 8px;">Add to Cart</button>
+            <button id="keypadPlace" class="btn btn-success" style="flex: 1; padding: 12px 0; font-weight: 600; font-size: 0.95rem; border-radius: 8px;">Place Order</button>
           </div>
+        <!-- Bottom Row: Cancel spans the entire width beneath to avoid mis-clicks -->
+          <button id="keypadCancel" class="btn btn-secondary w-100" data-bs-dismiss="modal" style="padding: 10px 0; font-weight: 600; font-size: 0.95rem; border-radius: 8px; background-color: #6c757d;">Cancel</button>
         </div>
       </div>
     </div>
@@ -309,6 +311,7 @@ let cart = [];
 let keypadTarget = null;
 const keypadModal = new bootstrap.Modal(document.getElementById('keypadModal'));
 let qtyValue = '1';
+let isFirstTap = true;
 
 // Cancel Modal logic
 const cancelModal = new bootstrap.Modal(document.getElementById('cancelModal'));
@@ -362,6 +365,7 @@ function renderMenu(){
 function openKeypad(name, slug, placedOrderRef=null){
   keypadTarget = {name, slug, placedOrderRef};
   qtyValue = placedOrderRef ? String(placedOrderRef.currentQty || 1) : '1';
+  isFirstTap = true;
   document.getElementById('keypadTitle').innerText = placedOrderRef ? `Edit ${name}` : `Quantity for ${name}`;
   updateQtyDisplay();
   keypadModal.show();
@@ -371,11 +375,24 @@ function updateQtyDisplay(){ document.getElementById('qtyDisplay').innerText = q
 document.getElementById('keypad').addEventListener('click', (e)=>{
   const key = e.target.dataset.key;
   if(!key) return;
-  if(key === 'C'){ qtyValue = '0'; }
-  else if(key === '←'){ qtyValue = qtyValue.length > 1 ? qtyValue.slice(0,-1) : '0'; }
+  
+  if(key === 'C'){ 
+    qtyValue = '0'; 
+    isFirstTap = false; 
+  }
+  else if(key === '←'){ 
+    qtyValue = qtyValue.length > 1 ? qtyValue.slice(0,-1) : '0'; 
+    isFirstTap = false; 
+  }
   else {
-    if(qtyValue === '0') qtyValue = key;
-    else qtyValue = (qtyValue + key).slice(0,4);
+    // If it's the very first tap, completely overwrite the default number
+    if(isFirstTap) {
+      qtyValue = key; 
+      isFirstTap = false; // Turn off so subsequent numbers append normally
+    } else {
+      if(qtyValue === '0') qtyValue = key;
+      else qtyValue = (qtyValue + key).slice(0,4);
+    }
   }
   if(qtyValue === '') qtyValue = '0';
   updateQtyDisplay();
