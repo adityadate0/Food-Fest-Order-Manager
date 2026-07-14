@@ -305,11 +305,14 @@ const MENU = [
   {name:"Kokam Sherbet", slug:"kokum-sherbet"}
 ];
 
-// Hardened Network State Initialization
+// Hardened Network State Initialization with cross-device long-polling support
 let socket = null;
 try {
   if (typeof io !== 'undefined') {
-    socket = io({ query: { role: 'front' } });
+    socket = io(window.location.origin, { 
+      query: { role: 'front' },
+      transports: ['polling', 'websocket']
+    });
   } else {
     console.warn("⚠️ Socket.io library failed to load. Running UI in standalone fallback mode.");
   }
@@ -514,8 +517,19 @@ function collectOrder(orderNumber){
         o.items.forEach(it => { if(it.status === 'ready') items.push(it.id); });
       }
     });
-    items.forEach(id => {
-      fetch('/item/update', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({itemId:id, status:'collected'})});
+
+    // Capture all fetch promises so we know exactly when they finish executing
+    const promises = items.map(id => 
+      fetch('/item/update', {
+        method:'POST', 
+        headers:{'Content-Type':'application/json'}, 
+        body:JSON.stringify({itemId:id, status:'collected'})
+      })
+    );
+    
+    // The exact millisecond all items are updated, force the UI to refresh instantly
+    Promise.all(promises).then(() => {
+      setTimeout(refresh, 50); 
     });
   });
 }
@@ -595,6 +609,9 @@ function init(){
   renderCartBadge();
   refresh();
   setTimeout(()=> autoScalePlacedCards(), 120);
+  
+  // High-frequency backup loop: synchronizes all panels every 0.5 seconds
+  setInterval(refresh, 500);
 }
 
 window.addEventListener('resize', ()=>{
