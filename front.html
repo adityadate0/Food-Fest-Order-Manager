@@ -278,14 +278,35 @@ body{
     </div>
   </div>
 
-  <!-- History Modal -->
-  <div class="modal fade" id="historyModal" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+  <!-- Advanced Edit Order Modal -->
+  <div class="modal fade" id="editOrderModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
-        <div class="modal-header"><h5 class="modal-title">Order History</h5></div>
-        <div class="modal-body" id="historyBody"></div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <div class="modal-header bg-light border-bottom-0 pb-1">
+          <h5 class="modal-title fw-bold" id="editOrderModalTitle">Edit Order</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body bg-white pt-2">
+          <div class="mb-3">
+            <label class="form-label font-monospace fw-bold text-muted small mb-1">CURRENT ITEMS</label>
+            <div id="editOrderItemsList" class="d-flex flex-column gap-2">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+
+          <hr class="opacity-10 my-3">
+
+          <div class="mb-1">
+            <label class="form-label font-monospace fw-bold text-muted small mb-1">ADD NEW ITEM</label>
+            <div class="d-flex gap-2">
+              <select id="editOrderMenuSelect" class="form-select fw-bold border-secondary text-dark"></select>
+              <button id="editOrderAddBtn" class="btn btn-primary fw-bold px-3">+ Add</button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer d-flex justify-content-between bg-light border-top-0 pt-2">
+          <button class="btn btn-secondary fw-bold" data-bs-dismiss="modal">Discard Changes</button>
+          <button id="editOrderSaveBtn" class="btn btn-success fw-bold px-4">Save Order</button>
         </div>
       </div>
     </div>
@@ -485,14 +506,104 @@ function renderPlaced(orders){
   autoScalePlacedCards();
 }
 
-function openEditOrderDialog(order){
-  const names = order.items.map(it=>`${it.name} x ${it.qty}`).join('\n');
-  const pick = prompt('Edit which item? Paste exact item name from list:\n' + names);
-  if(!pick) return;
-  const found = order.items.find(it => it.name.toLowerCase() === pick.toLowerCase());
-  if(!found){ alert('Item not found. Use exact name from list.'); return; }
-  openKeypad(found.name, null, { orderNumber: order.orderNumber, itemId: found.id, currentQty: found.qty });
+// --- ADVANCED EDIT ORDER ENGINE ---
+let currentEditOrderNumber = null;
+let currentEditItems = [];
+let editOrderModalInstance = null;
+
+function openEditOrderDialog(order) {
+  currentEditOrderNumber = order.orderNumber;
+  // Deep clone the array so changes don't affect live data until we hit Save
+  currentEditItems = JSON.parse(JSON.stringify(order.items));
+  document.getElementById('editOrderModalTitle').innerText = `Editing: ${order.orderNumber}`;
+
+  // Build the dropdown dynamically from the MENU array
+  const select = document.getElementById('editOrderMenuSelect');
+  select.innerHTML = '';
+  MENU.forEach(it => {
+    select.innerHTML += `<option value="${it.name}">${it.name}</option>`;
+  });
+
+  renderEditItemsList();
+  
+  if (!editOrderModalInstance) {
+    editOrderModalInstance = new bootstrap.Modal(document.getElementById('editOrderModal'));
+  }
+  editOrderModalInstance.show();
 }
+
+function renderEditItemsList() {
+  const list = document.getElementById('editOrderItemsList');
+  list.innerHTML = '';
+  
+  if (currentEditItems.length === 0) {
+    list.innerHTML = `<div class="text-danger small p-2 bg-light rounded text-center fw-bold">No items left. Saving will cancel this order entirely.</div>`;
+    return;
+  }
+
+  currentEditItems.forEach((it, index) => {
+    const row = document.createElement('div');
+    row.className = 'd-flex justify-content-between align-items-center p-2 border rounded shadow-sm bg-light';
+    row.innerHTML = `
+      <div class="fw-bold text-dark text-truncate pe-2" style="font-size:1rem; max-width: 50%;">${it.name}</div>
+      <div class="d-flex align-items-center gap-2">
+        <button class="btn btn-sm btn-outline-danger fw-bold fs-6" onclick="modifyEditItem(${index}, -1)" style="width:36px; height:36px; padding:0;">-</button>
+        <span class="fw-bold text-center" style="min-width:24px; font-size:1.1rem;">${it.qty}</span>
+        <button class="btn btn-sm btn-outline-success fw-bold fs-6" onclick="modifyEditItem(${index}, 1)" style="width:36px; height:36px; padding:0;">+</button>
+        <button class="btn btn-sm btn-danger ms-1 fw-bold fs-6" onclick="removeEditItem(${index})" style="width:36px; height:36px; padding:0;">🗑️</button>
+      </div>
+    `;
+    list.appendChild(row);
+  });
+}
+
+// Attached to the global scope for the inline HTML onclick handlers
+window.modifyEditItem = function(index, delta) {
+  currentEditItems[index].qty += delta;
+  if (currentEditItems[index].qty < 1) currentEditItems.splice(index, 1);
+  renderEditItemsList();
+};
+
+window.removeEditItem = function(index) {
+  currentEditItems.splice(index, 1);
+  renderEditItemsList();
+};
+
+document.getElementById('editOrderAddBtn').onclick = () => {
+  const selectedName = document.getElementById('editOrderMenuSelect').value;
+  if (!selectedName) return;
+
+  const existing = currentEditItems.find(i => i.name === selectedName);
+  if (existing) {
+    existing.qty += 1;
+  } else {
+    const isFrontDesk = ['Lassi', 'Kokam Sherbet', 'Kulfi'].includes(selectedName);
+    currentEditItems.push({
+      name: selectedName,
+      qty: 1,
+      status: isFrontDesk ? 'ready' : 'placed'
+    });
+  }
+  renderEditItemsList();
+};
+
+document.getElementById('editOrderSaveBtn').onclick = () => {
+  if (!currentEditOrderNumber) return;
+
+  fetch('/order/overwrite', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      orderNumber: currentEditOrderNumber,
+      items: currentEditItems
+    })
+  }).then(() => {
+    editOrderModalInstance.hide();
+    // Force an immediate UI refresh so it doesn't wait for the 500ms loop
+    setTimeout(refresh, 50);
+  });
+};
+// --- END ADVANCED EDIT ENGINE ---
 
 function renderReady(orders){
   const container = document.getElementById('ready-orders');

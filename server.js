@@ -14,6 +14,9 @@ function loadData(){
 }
 function saveData(data){ fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2)); }
 
+// WIPE HISTORY ON BOOT: This guarantees a completely fresh session every time you launch the .exe
+saveData({ orders: [] });
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
@@ -21,8 +24,6 @@ const io = new Server(server);
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 app.use('/images', express.static(path.join(process.cwd(), 'images')));
-
-if(!fs.existsSync(DATA_FILE)) saveData({ orders: [] });
 
 function getNetworkInfo() {
   const interfaces = os.networkInterfaces();
@@ -37,7 +38,6 @@ function getNetworkInfo() {
   return connections;
 }
 
-/* Updated Root Route: Serves the Dashboard with Station A and Station B links */
 app.get('/', (req, res) => {
   const networks = getNetworkInfo();
   const PORT = process.env.PORT || 3000;
@@ -103,27 +103,6 @@ app.get('/', (req, res) => {
   res.send(html);
 });
 
-/* NEW: Generates and downloads the Excel file on demand */
-app.get('/export', (req, res) => {
-  const data = loadData();
-  let rows = "Item Name,Quantity,Time,Date,Order Number,Status\n";
-  
-  data.orders.forEach(order => {
-    const now = new Date(order.createdAt);
-    const pad = (num) => String(num).padStart(2, '0');
-    const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-    const dateStr = now.toISOString().split('T')[0];
-    
-    order.items.forEach(it => {
-      rows += `${it.name},${it.qty},${timeStr},${dateStr},${order.orderNumber},${it.status}\n`;
-    });
-  });
-  
-  res.setHeader('Content-Type', 'text/csv');
-  res.setHeader('Content-Disposition', `attachment; filename=festival_orders_${Date.now()}.csv`);
-  res.status(200).send(rows);
-});
-
 app.get('/state', (req, res) => {
   const data = loadData();
   const active = data.orders.filter(o => o.status !== 'completed');
@@ -134,30 +113,6 @@ app.get('/history', (req, res) => {
   res.json({ orders: loadData().orders });
 });
 
-app.post('/export-local', (req, res) => {
-  const data = loadData();
-  let rows = "Item Name,Quantity,Time,Date,Order Number,Status\n";
-  
-  data.orders.forEach(order => {
-    const now = new Date(order.createdAt);
-    const pad = (num) => String(num).padStart(2, '0');
-    const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-    const dateStr = now.toISOString().split('T')[0];
-    
-    order.items.forEach(it => {
-      rows += `${it.name},${it.qty},${timeStr},${dateStr},${order.orderNumber},${it.status}\n`;
-    });
-  });
-  
-  // Write the file directly to the host machine's current directory
-  const fileName = `festival_orders_${Date.now()}.csv`;
-  const filePath = require('path').join(process.cwd(), fileName);
-  require('fs').writeFileSync(filePath, rows, 'utf8');
-  
-  console.log(`Excel log saved automatically to: ${filePath}`);
-  res.json({ ok: true });
-});
-
 app.post('/order', (req, res) => {
   const { items } = req.body;
   if(!items || items.length === 0) return res.status(400).json({ error: 'no items' });
@@ -166,7 +121,6 @@ app.post('/order', (req, res) => {
   const orderNumber = 'ORD' + String(id).slice(-6);
   
   const mappedItems = items.map((it, idx) => {
-    // ADDED: Kulfi is now recognized as a front desk instant item
     const isFrontDeskItem = ['Lassi', 'Kokam Sherbet', 'Kulfi'].includes(it.name);
     return {
       id: `${id}-${idx}`,
@@ -239,6 +193,83 @@ app.post('/order/delete-item', (req, res) => {
   data.orders = data.orders.filter(o => o.items.length > 0);
   if(changed){ saveData(data); io.emit('order:update'); return res.json({ ok:true }); }
   return res.status(404).json({ error:'not found' });
+});
+
+/* Export route with specific formatting: Order_History_YYYY-MM-DD_HH-MM-SS.csv */
+app.post('/export-local', (req, res) => {
+  const data = loadData();
+  let rows = "Item Name,Quantity,Time,Date,Order Number,Status\n";
+  
+  data.orders.forEach(order => {
+    const now = new Date(order.createdAt);
+    const pad = (num) => String(num).padStart(2, '0');
+    const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    const dateStr = now.toISOString().split('T')[0];
+    
+    order.items.forEach(it => {
+      rows += `${it.name},${it.qty},${timeStr},${dateStr},${order.orderNumber},${it.status}\n`;
+    });
+  });
+  
+  const fileNow = new Date();
+  const padStr = (num) => String(num).padStart(2, '0');
+  
+  const dStr = `${fileNow.getFullYear()}-${padStr(fileNow.getMonth()+1)}-${padStr(fileNow.getDate())}`;
+  const tStr = `${padStr(fileNow.getHours())}-${padStr(fileNow.getMinutes())}-${padStr(fileNow.getSeconds())}`;
+  const fileName = `Order_History_${dStr}_${tStr}.csv`;
+  
+  const filePath = require('path').join(process.cwd(), fileName);
+  require('fs').writeFileSync(filePath, rows, 'utf8');
+  
+  console.log(`Excel log saved automatically to: ${filePath}`);
+  res.json({ ok: true });
+});
+
+/* NEW: Completely overwrites an order's items array */
+app.post('/order/overwrite', (req, res) => {
+  const { orderNumber, items } = req.body;
+  const data = loadData();
+  const orderIndex = data.orders.findIndex(o => o.orderNumber === orderNumber);
+  
+  if (orderIndex === -1) return res.status(404).json({error: 'not found'});
+
+  // If the user removed every single item during the edit, delete the order completely
+  if (!items || items.length === 0) {
+    data.orders.splice(orderIndex, 1);
+    saveData(data);
+    io.emit('order:update');
+    return res.json({ ok: true });
+  }
+
+  const id = Date.now();
+  const mappedItems = items.map((it, idx) => {
+    const isFrontDeskItem = ['Lassi', 'Kokam Sherbet', 'Kulfi'].includes(it.name);
+    return {
+      id: it.id || `${id}-${idx}`, // Preserve existing IDs so the kitchen doesn't lose track
+      name: it.name,
+      qty: parseInt(it.qty) || 1,
+      status: it.status || (isFrontDeskItem ? 'ready' : 'placed')
+    };
+  });
+
+  data.orders[orderIndex].items = mappedItems;
+
+  // Re-evaluate the entire order's status based on the new item list
+  const anyInProgress = mappedItems.some(i => i.status === 'in_progress');
+  const allReady = mappedItems.every(i => i.status === 'ready' || i.status === 'collected');
+  const allCollected = mappedItems.every(i => i.status === 'collected');
+
+  if (allCollected) { 
+    data.orders[orderIndex].status = 'completed'; 
+    if(!data.orders[orderIndex].completedAt) data.orders[orderIndex].completedAt = new Date().toISOString();
+  } 
+  else if (allReady) { data.orders[orderIndex].status = 'ready'; } 
+  else if (anyInProgress) { data.orders[orderIndex].status = 'in_progress'; } 
+  else { data.orders[orderIndex].status = 'placed'; }
+
+  saveData(data);
+  io.emit('order:update');
+  res.json({ ok: true });
 });
 
 io.on('connection', socket => {
