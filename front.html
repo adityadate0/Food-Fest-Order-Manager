@@ -319,7 +319,7 @@ body{
     </div>
   </div>
 
-  <!-- Advanced Edit Order Modal -->
+<!-- Advanced Edit Order Modal -->
   <div class="modal fade" id="editOrderModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
@@ -348,6 +348,22 @@ body{
         <div class="modal-footer d-flex justify-content-between bg-light border-top-0 pt-2">
           <button class="btn btn-secondary fw-bold" data-bs-dismiss="modal">Discard Changes</button>
           <button id="editOrderSaveBtn" class="btn btn-success fw-bold px-4">Save Order</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESTORED: This was completely missing from your file! -->
+  <div class="modal fade" id="historyModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold">Order History</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="historyBody"></div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary fw-bold" data-bs-dismiss="modal">Close</button>
         </div>
       </div>
     </div>
