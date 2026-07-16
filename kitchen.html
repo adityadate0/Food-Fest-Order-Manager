@@ -126,6 +126,24 @@ try {
 let audioEnabled = false;
 let audioCtx = null;
 
+// NEW: Determine which station this tablet is assigned to via the URL (e.g., ?station=A)
+const urlParams = new URLSearchParams(window.location.search);
+const currentStation = urlParams.get('station') || 'ALL'; 
+
+// NEW: Update the top title to clearly show the cooks which tablet this is
+document.addEventListener("DOMContentLoaded", () => {
+  const titleEl = document.querySelector('.header h3:first-child');
+  if (titleEl) {
+    if (currentStation === 'A') titleEl.innerText = "Kitchen - Station A";
+    if (currentStation === 'B') titleEl.innerText = "Kitchen - Station B";
+  }
+});
+
+// NEW: Station Routing Logic & Kulfi Update
+const STATION_A_ITEMS = ['Bhel', 'Butter Chicken Rice'];
+const STATION_B_ITEMS = ['Chole Rice', 'Vada Pav', 'Samosa Pav', 'Samosa Chat'];
+const FRONT_DESK_ITEMS = ['Lassi', 'Kokam Sherbet', 'Kulfi'];
+
 function computeCardWidth(){
   const headerHeight = document.querySelector('.header').getBoundingClientRect().height + 12;
   const availW = window.innerWidth - 24;
@@ -147,12 +165,24 @@ function renderQueue(orders){
   container.innerHTML = '';
   
   orders.slice().reverse().forEach(o=>{
-    const kitchenItems = o.items.filter(it => it.name !== 'Lassi' && it.name !== 'Kokam Sherbet');
+    // Filter out Front Desk items (Lassi, Kokam Sherbet, and Kulfi)
+    let kitchenItems = o.items.filter(it => !FRONT_DESK_ITEMS.includes(it.name));
+    
+    // Filter strictly by assigned Station
+    if (currentStation === 'A') {
+      kitchenItems = kitchenItems.filter(it => STATION_A_ITEMS.includes(it.name));
+    } else if (currentStation === 'B') {
+      kitchenItems = kitchenItems.filter(it => STATION_B_ITEMS.includes(it.name));
+    }
+
     if (kitchenItems.length === 0) return;
+
+    // Check if ALL items assigned to THIS station are ready
+    const isStationReady = kitchenItems.every(i => i.status === 'ready' || i.status === 'collected');
 
     const card = document.createElement('div'); card.className='card-play';
     card.id = `order-${o.orderNumber}`;
-    card.innerHTML = `<div class="card-header"><div><strong>${o.orderNumber}</strong><div class="small-muted">${new Date(o.createdAt).toLocaleTimeString()}</div></div><div><span class="badge bg-${o.status==='ready'?'warning':'info'}">${o.status}</span></div></div>`;
+    card.innerHTML = `<div class="card-header"><div><strong>${o.orderNumber}</strong><div class="small-muted">${new Date(o.createdAt).toLocaleTimeString()}</div></div><div><span class="badge bg-${isStationReady?'warning':'info'}">${isStationReady?'ready':'placed'}</span></div></div>`;
     const itemsWrap = document.createElement('div'); itemsWrap.className='card-items';
     
     kitchenItems.forEach(it=>{
@@ -226,8 +256,15 @@ function refresh(){
 if (socket) {
   socket.on('order:new', (order) => {
     if (audioEnabled && order && order.items) {
-      const hasFoodItems = order.items.some(it => it.name !== 'Lassi' && it.name !== 'Kokam Sherbet');
-      if (hasFoodItems) {
+      // Filter out Front Desk items
+      let relevantItems = order.items.filter(it => !FRONT_DESK_ITEMS.includes(it.name));
+      
+      // Filter by Station for Chime
+      if (currentStation === 'A') relevantItems = relevantItems.filter(it => STATION_A_ITEMS.includes(it.name));
+      if (currentStation === 'B') relevantItems = relevantItems.filter(it => STATION_B_ITEMS.includes(it.name));
+      
+      // Only chime if THIS specific station received an item
+      if (relevantItems.length > 0) {
         playKitchenChime();
       }
     }

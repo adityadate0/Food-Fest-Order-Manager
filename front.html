@@ -302,7 +302,8 @@ const MENU = [
   {name:"Bhel", slug:"bhel"},
   {name:"Samosa Chat", slug:"samosa-chat"},
   {name:"Lassi", slug:"lassi"},
-  {name:"Kokam Sherbet", slug:"kokum-sherbet"}
+  {name:"Kokam Sherbet", slug:"kokum-sherbet"},
+  {name:"Kulfi", slug:"kulfi"}
 ];
 
 // Hardened Network State Initialization with cross-device long-polling support
@@ -588,18 +589,25 @@ function autoScalePlacedCards(){
 }
 
 function quitApp() {
-  if (confirm("Are you sure you want to quit the front desk? This will close your active session and finalize the Excel log.")) {
-    if (document.fullscreenElement || document.webkitFullscreenElement) {
-      if (document.exitFullscreen) {
-        document.exitFullscreen().catch(err => console.log(err));
-      } else if (document.webkitExitFullscreen) {
-        document.webkitExitFullscreen();
+  if (confirm("Are you sure you want to quit the front desk? This will download the Excel log to this device and close your session.")) {
+    
+    // Create an invisible link to trigger the CSV download to the local laptop
+    const a = document.createElement('a');
+    a.href = '/export';
+    a.download = ''; 
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    // Give the download 1.5 seconds to start, then kill the screen
+    setTimeout(() => {
+      if (document.fullscreenElement || document.webkitFullscreenElement) {
+        if (document.exitFullscreen) document.exitFullscreen().catch(err => console.log(err));
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
       }
-    }
-    if (socket) {
-      socket.disconnect();
-    }
-    window.location.href = 'about:blank';
+      if (socket) socket.disconnect();
+      window.location.href = 'about:blank';
+    }, 1500);
   }
 }
 
