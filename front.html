@@ -370,6 +370,13 @@ function renderMenu(){
     btn.className = 'square-btn';
     btn.setAttribute('data-slug', it.slug);
     btn.setAttribute('data-name', it.name);
+    
+    // Push Kulfi to the center by spanning both grid columns
+    if (it.slug === 'kulfi') {
+      btn.style.gridColumn = '1 / -1';
+      btn.style.justifySelf = 'center';
+    }
+    
     btn.innerHTML = `<img src="/images/${it.slug}.jpg" onerror="this.src='/images/placeholder.jpg'"><div class="label">${it.name}</div>`;
     btn.onclick = ()=> openKeypad(it.name, it.slug);
     grid.appendChild(btn);
@@ -589,25 +596,23 @@ function autoScalePlacedCards(){
 }
 
 function quitApp() {
-  if (confirm("Are you sure you want to quit the front desk? This will download the Excel log to this device and close your session.")) {
+  if (confirm("Are you sure you want to quit? This will automatically save the Excel log to the server folder and close your session.")) {
     
-    // Create an invisible link to trigger the CSV download to the local laptop
-    const a = document.createElement('a');
-    a.href = '/export';
-    a.download = ''; 
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-
-    // Give the download 1.5 seconds to start, then kill the screen
-    setTimeout(() => {
+    // Trigger the silent backend save request
+    fetch('/export-local', { method: 'POST' }).then(() => {
+      
+      // Close out the interface
       if (document.fullscreenElement || document.webkitFullscreenElement) {
         if (document.exitFullscreen) document.exitFullscreen().catch(err => console.log(err));
         else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
       }
       if (socket) socket.disconnect();
       window.location.href = 'about:blank';
-    }, 1500);
+      
+    }).catch(err => {
+      console.error("Failed to save Excel file:", err);
+      alert("Failed to save Excel file. Is the server still running?");
+    });
   }
 }
 

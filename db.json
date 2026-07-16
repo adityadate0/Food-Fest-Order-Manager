@@ -13,7 +13,7 @@
           "status": "collected"
         }
       ],
-      "completedAt": "2026-07-16T17:57:52.981Z"
+      "completedAt": "2026-07-16T18:11:28.762Z"
     },
     {
       "id": 1784224462905,
@@ -28,7 +28,7 @@
           "status": "collected"
         }
       ],
-      "completedAt": "2026-07-16T17:57:52.981Z"
+      "completedAt": "2026-07-16T18:11:28.762Z"
     },
     {
       "id": 1784224467012,
@@ -43,7 +43,7 @@
           "status": "collected"
         }
       ],
-      "completedAt": "2026-07-16T17:57:52.981Z"
+      "completedAt": "2026-07-16T18:11:28.762Z"
     },
     {
       "id": 1784224475658,
@@ -58,7 +58,7 @@
           "status": "collected"
         }
       ],
-      "completedAt": "2026-07-16T17:57:52.981Z"
+      "completedAt": "2026-07-16T18:11:28.762Z"
     },
     {
       "id": 1784224485727,
@@ -73,7 +73,7 @@
           "status": "collected"
         }
       ],
-      "completedAt": "2026-07-16T17:57:52.981Z"
+      "completedAt": "2026-07-16T18:11:28.762Z"
     },
     {
       "id": 1784224497383,
@@ -88,7 +88,7 @@
           "status": "collected"
         }
       ],
-      "completedAt": "2026-07-16T17:57:52.981Z"
+      "completedAt": "2026-07-16T18:11:28.762Z"
     },
     {
       "id": 1784224501137,
@@ -103,7 +103,7 @@
           "status": "collected"
         }
       ],
-      "completedAt": "2026-07-16T17:57:52.981Z"
+      "completedAt": "2026-07-16T18:11:28.762Z"
     },
     {
       "id": 1784224577747,
@@ -118,7 +118,7 @@
           "status": "collected"
         }
       ],
-      "completedAt": "2026-07-16T17:57:52.981Z"
+      "completedAt": "2026-07-16T18:11:28.762Z"
     },
     {
       "id": 1784224580888,
@@ -133,7 +133,7 @@
           "status": "collected"
         }
       ],
-      "completedAt": "2026-07-16T17:57:52.981Z"
+      "completedAt": "2026-07-16T18:11:28.762Z"
     },
     {
       "id": 1784224606074,
@@ -196,7 +196,70 @@
           "status": "collected"
         }
       ],
-      "completedAt": "2026-07-16T17:57:52.981Z"
+      "completedAt": "2026-07-16T18:11:28.762Z"
+    },
+    {
+      "id": 1784225398042,
+      "orderNumber": "ORD398042",
+      "createdAt": "2026-07-16T18:09:58.043Z",
+      "status": "completed",
+      "items": [
+        {
+          "id": "1784225398042-0",
+          "name": "Butter Chicken Rice",
+          "qty": 1,
+          "status": "collected"
+        },
+        {
+          "id": "1784225398042-1",
+          "name": "Chole Rice",
+          "qty": 1,
+          "status": "collected"
+        },
+        {
+          "id": "1784225398042-2",
+          "name": "Vada Pav",
+          "qty": 1,
+          "status": "collected"
+        },
+        {
+          "id": "1784225398042-3",
+          "name": "Samosa Pav",
+          "qty": 1,
+          "status": "collected"
+        },
+        {
+          "id": "1784225398042-4",
+          "name": "Bhel",
+          "qty": 1,
+          "status": "collected"
+        },
+        {
+          "id": "1784225398042-5",
+          "name": "Samosa Chat",
+          "qty": 1,
+          "status": "collected"
+        },
+        {
+          "id": "1784225398042-6",
+          "name": "Lassi",
+          "qty": 1,
+          "status": "collected"
+        },
+        {
+          "id": "1784225398042-7",
+          "name": "Kokam Sherbet",
+          "qty": 1,
+          "status": "collected"
+        },
+        {
+          "id": "1784225398042-8",
+          "name": "Kulfi",
+          "qty": 1,
+          "status": "collected"
+        }
+      ],
+      "completedAt": "2026-07-16T18:11:28.762Z"
     }
   ]
 }
