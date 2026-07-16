@@ -134,6 +134,30 @@ app.get('/history', (req, res) => {
   res.json({ orders: loadData().orders });
 });
 
+app.post('/export-local', (req, res) => {
+  const data = loadData();
+  let rows = "Item Name,Quantity,Time,Date,Order Number,Status\n";
+  
+  data.orders.forEach(order => {
+    const now = new Date(order.createdAt);
+    const pad = (num) => String(num).padStart(2, '0');
+    const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    const dateStr = now.toISOString().split('T')[0];
+    
+    order.items.forEach(it => {
+      rows += `${it.name},${it.qty},${timeStr},${dateStr},${order.orderNumber},${it.status}\n`;
+    });
+  });
+  
+  // Write the file directly to the host machine's current directory
+  const fileName = `festival_orders_${Date.now()}.csv`;
+  const filePath = require('path').join(process.cwd(), fileName);
+  require('fs').writeFileSync(filePath, rows, 'utf8');
+  
+  console.log(`Excel log saved automatically to: ${filePath}`);
+  res.json({ ok: true });
+});
+
 app.post('/order', (req, res) => {
   const { items } = req.body;
   if(!items || items.length === 0) return res.status(400).json({ error: 'no items' });
