@@ -368,7 +368,7 @@ const MENU = [
   {name:"Kulfi", slug:"kulfi"}
 ];
 
-// Hardened Network State Initialization with cross-device long-polling support
+// Hardened Network State Initialization with cross-device long-polling fallback support
 let socket = null;
 try {
   if (typeof io !== 'undefined') {
@@ -383,17 +383,18 @@ try {
   console.error("Network initialization halted:", networkError);
 }
 
-// RESTORED: App Architecture Core State Trackers
+// Core App State Tracking Variables
 let cart = [];
 let keypadTarget = null;
 let qtyValue = '1';
 let isFirstTap = true;
 
-// RESTORED: Core Modal Interface Instances
+// Core Bootstrap Modal Instances
 const cancelModal = new bootstrap.Modal(document.getElementById('cancelModal'));
 const keypadModal = new bootstrap.Modal(document.getElementById('keypadModal'));
 let cancelTargetOrderData = null;
 
+// Cancel Order Modal workflows
 function promptCancelOrder(orderNumber, items) {
   cancelTargetOrderData = { orderNumber, items };
   document.getElementById('cancelTargetOrder').innerText = orderNumber;
@@ -433,7 +434,7 @@ function renderMenu(){
     btn.setAttribute('data-slug', it.slug);
     btn.setAttribute('data-name', it.name);
     
-    // Push Kulfi to the center by spanning both grid columns
+    // Centers Kulfi elegantly across the layout columns at the grid base
     if (it.slug === 'kulfi') {
       btn.style.gridColumn = '1 / -1';
       btn.style.justifySelf = 'center';
@@ -554,14 +555,10 @@ let editOrderModalInstance = null;
 
 function openEditOrderDialog(order) {
   currentEditOrderNumber = order.orderNumber;
-  // Deep clone array snapshot to isolate active live canvas manipulations
   currentEditItems = JSON.parse(JSON.stringify(order.items));
   document.getElementById('editOrderModalTitle').innerText = `Editing: ${order.orderNumber}`;
 
-  // Populate list of items currently inside the order
   renderEditItemsList();
-  
-  // Build and render the 3x3 grid of mini food button tiles inside the modal
   renderEditMenuGrid();
   
   if (!editOrderModalInstance) {
@@ -570,7 +567,6 @@ function openEditOrderDialog(order) {
   editOrderModalInstance.show();
 }
 
-/* Renders the top list of items inside the active order modification queue */
 function renderEditItemsList() {
   const list = document.getElementById('editOrderItemsList');
   list.innerHTML = '';
@@ -596,7 +592,6 @@ function renderEditItemsList() {
   });
 }
 
-/* NEW: Generates the 3x3 touch-friendly mini food grid inside the editing modal */
 function renderEditMenuGrid() {
   const grid = document.getElementById('editOrderMenuGrid');
   grid.innerHTML = '';
@@ -605,14 +600,11 @@ function renderEditMenuGrid() {
     const btn = document.createElement('button');
     btn.className = 'edit-square-btn';
     btn.innerHTML = `<img src="/images/${it.slug}.jpg" onerror="this.src='/images/placeholder.jpg'"><div class="label">${it.name}</div>`;
-    
-    // Tap handler instantly appends new items or increments quantities
     btn.onclick = () => handleAddEditItem(it.name);
     grid.appendChild(btn);
   });
 }
 
-/* Appends a selected tile to the order modification blueprint array mapping */
 function handleAddEditItem(selectedName) {
   const existing = currentEditItems.find(i => i.name === selectedName);
   if (existing) {
@@ -654,7 +646,7 @@ document.getElementById('editOrderSaveBtn').onclick = () => {
     setTimeout(refresh, 50);
   });
 };
-// --- END ADVANCED EDIT ENGINE ---
+// --- END ADVANCED EDIT ORDER ENGINE ---
 
 function renderReady(orders){
   const container = document.getElementById('ready-orders');
@@ -688,7 +680,6 @@ function collectOrder(orderNumber){
       }
     });
 
-    // Capture all fetch promises so we know exactly when they finish executing
     const promises = items.map(id => 
       fetch('/item/update', {
         method:'POST', 
@@ -697,28 +688,32 @@ function collectOrder(orderNumber){
       })
     );
     
-    // The exact millisecond all items are updated, force the UI to refresh instantly
     Promise.all(promises).then(() => {
       setTimeout(refresh, 50); 
     });
   });
 }
 
+// RESTORED: Master Order History tracking controller initialization mapping
+let historyModalInstance = null;
 function openHistory(){
   fetch('/history').then(r=>r.json()).then(data=>{
     const body = document.getElementById('historyBody');
     body.innerHTML = '';
     data.orders.slice().reverse().forEach(o=>{
       const card = document.createElement('div');
-      card.className = 'placed-card';
+      card.className = 'placed-card mb-2';
       card.innerHTML = `<div><strong>${o.orderNumber}</strong></div>
         <div>Placed: ${new Date(o.createdAt).toLocaleString()}</div>
         <div>Completed: ${o.completedAt ? new Date(o.completedAt).toLocaleString() : '—'}</div>
-        <hr>
+        <hr style="margin:4px 0; opacity:0.15;">
         ${o.items.map(i => `${i.name} x ${i.qty} (${i.status})`).join('<br>')}`;
       body.appendChild(card);
     });
-    new bootstrap.Modal(document.getElementById('historyModal')).show();
+    if (!historyModalInstance) {
+      historyModalInstance = new bootstrap.Modal(document.getElementById('historyModal'));
+    }
+    historyModalInstance.show();
   });
 }
 
@@ -759,21 +754,13 @@ function autoScalePlacedCards(){
 
 function quitApp() {
   if (confirm("Are you sure you want to quit? This will automatically save the Excel log to the server folder and close your session.")) {
-    
-    // Trigger the silent backend save request
     fetch('/export-local', { method: 'POST' }).then(() => {
-      
-      // Close out the interface
       if (document.fullscreenElement || document.webkitFullscreenElement) {
         if (document.exitFullscreen) document.exitFullscreen().catch(err => console.log(err));
         else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
       }
       if (socket) socket.disconnect();
       window.location.href = 'about:blank';
-      
-    }).catch(err => {
-      console.error("Failed to save Excel file:", err);
-      alert("Failed to save Excel file. Is the server still running?");
     });
   }
 }
@@ -784,8 +771,6 @@ function init(){
   renderCartBadge();
   refresh();
   setTimeout(()=> autoScalePlacedCards(), 120);
-  
-  // High-frequency backup loop: synchronizes all panels every 0.5 seconds
   setInterval(refresh, 500);
 }
 
