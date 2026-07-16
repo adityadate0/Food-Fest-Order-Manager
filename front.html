@@ -177,6 +177,47 @@ body{
 .key { padding:12px; font-size:1.1rem; border-radius:8px; background:#f1f3f5; border:1px solid rgba(0,0,0,0.04); text-align:center; cursor:pointer; user-select:none; }
 .key:active{transform:translateY(1px);}
 .qty-display { font-size:1.6rem; text-align:center; padding:8px 0; font-weight:700; }
+
+/* Miniature visual menu grid layout inside the Advanced Edit Modal */
+.edit-menu-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 6px;
+}
+.edit-square-btn {
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 6px;
+  border: 1px solid rgba(0,0,0,0.08);
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+  transition: transform .05s ease, box-shadow .05s ease;
+}
+.edit-square-btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+}
+.edit-square-btn img {
+  width: 100%;
+  height: 52px;
+  object-fit: cover;
+  border-radius: 4px;
+  display: block;
+}
+.edit-square-btn .label {
+  margin-top: 4px;
+  font-weight: 600;
+  font-size: 0.82rem;
+  text-align: center;
+  line-height: 1.1;
+}
+
 </style>
 </head>
 <body>
@@ -296,11 +337,11 @@ body{
 
           <hr class="opacity-10 my-3">
 
+          <!-- Swapped: Removed text select dropdown menu in favor of visual asset tiles -->
           <div class="mb-1">
-            <label class="form-label font-monospace fw-bold text-muted small mb-1">ADD NEW ITEM</label>
-            <div class="d-flex gap-2">
-              <select id="editOrderMenuSelect" class="form-select fw-bold border-secondary text-dark"></select>
-              <button id="editOrderAddBtn" class="btn btn-primary fw-bold px-3">+ Add</button>
+            <label class="form-label font-monospace fw-bold text-muted small mb-1">ADD NEW ITEM (TAP TO ATTACH)</label>
+            <div id="editOrderMenuGrid" class="edit-menu-grid">
+              <!-- Populated dynamically by JavaScript -->
             </div>
           </div>
         </div>
@@ -513,18 +554,15 @@ let editOrderModalInstance = null;
 
 function openEditOrderDialog(order) {
   currentEditOrderNumber = order.orderNumber;
-  // Deep clone the array so changes don't affect live data until we hit Save
+  // Deep clone array snapshot to isolate active live canvas manipulations
   currentEditItems = JSON.parse(JSON.stringify(order.items));
   document.getElementById('editOrderModalTitle').innerText = `Editing: ${order.orderNumber}`;
 
-  // Build the dropdown dynamically from the MENU array
-  const select = document.getElementById('editOrderMenuSelect');
-  select.innerHTML = '';
-  MENU.forEach(it => {
-    select.innerHTML += `<option value="${it.name}">${it.name}</option>`;
-  });
-
+  // Populate list of items currently inside the order
   renderEditItemsList();
+  
+  // Build and render the 3x3 grid of mini food button tiles inside the modal
+  renderEditMenuGrid();
   
   if (!editOrderModalInstance) {
     editOrderModalInstance = new bootstrap.Modal(document.getElementById('editOrderModal'));
@@ -532,6 +570,7 @@ function openEditOrderDialog(order) {
   editOrderModalInstance.show();
 }
 
+/* Renders the top list of items inside the active order modification queue */
 function renderEditItemsList() {
   const list = document.getElementById('editOrderItemsList');
   list.innerHTML = '';
@@ -557,22 +596,24 @@ function renderEditItemsList() {
   });
 }
 
-// Attached to the global scope for the inline HTML onclick handlers
-window.modifyEditItem = function(index, delta) {
-  currentEditItems[index].qty += delta;
-  if (currentEditItems[index].qty < 1) currentEditItems.splice(index, 1);
-  renderEditItemsList();
-};
+/* NEW: Generates the 3x3 touch-friendly mini food grid inside the editing modal */
+function renderEditMenuGrid() {
+  const grid = document.getElementById('editOrderMenuGrid');
+  grid.innerHTML = '';
 
-window.removeEditItem = function(index) {
-  currentEditItems.splice(index, 1);
-  renderEditItemsList();
-};
+  MENU.forEach(it => {
+    const btn = document.createElement('button');
+    btn.className = 'edit-square-btn';
+    btn.innerHTML = `<img src="/images/${it.slug}.jpg" onerror="this.src='/images/placeholder.jpg'"><div class="label">${it.name}</div>`;
+    
+    // Tap handler instantly appends new items or increments quantities
+    btn.onclick = () => handleAddEditItem(it.name);
+    grid.appendChild(btn);
+  });
+}
 
-document.getElementById('editOrderAddBtn').onclick = () => {
-  const selectedName = document.getElementById('editOrderMenuSelect').value;
-  if (!selectedName) return;
-
+/* Appends a selected tile to the order modification blueprint array mapping */
+function handleAddEditItem(selectedName) {
   const existing = currentEditItems.find(i => i.name === selectedName);
   if (existing) {
     existing.qty += 1;
@@ -584,6 +625,17 @@ document.getElementById('editOrderAddBtn').onclick = () => {
       status: isFrontDesk ? 'ready' : 'placed'
     });
   }
+  renderEditItemsList();
+}
+
+window.modifyEditItem = function(index, delta) {
+  currentEditItems[index].qty += delta;
+  if (currentEditItems[index].qty < 1) currentEditItems.splice(index, 1);
+  renderEditItemsList();
+};
+
+window.removeEditItem = function(index) {
+  currentEditItems.splice(index, 1);
   renderEditItemsList();
 };
 
@@ -599,7 +651,6 @@ document.getElementById('editOrderSaveBtn').onclick = () => {
     })
   }).then(() => {
     editOrderModalInstance.hide();
-    // Force an immediate UI refresh so it doesn't wait for the 500ms loop
     setTimeout(refresh, 50);
   });
 };
