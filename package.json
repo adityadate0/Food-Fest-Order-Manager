@@ -4,7 +4,8 @@
   "main": "server.js",
   "bin": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "build": "pkg . --targets node18-win-x64"
   },
   "pkg": {
     "assets": [
