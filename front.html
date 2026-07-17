@@ -436,12 +436,28 @@ document.getElementById('confirmCancelBtn').onclick = () => {
 };
 
 function computeSquareSize(){
+  // 1. Get available vertical space
   const headerHeight = document.querySelector('.header').getBoundingClientRect().height + 8;
   const layoutHeight = window.innerHeight - headerHeight - 20 - 55;
   const gap = 10;
-  const rows = 4;
+  
+  // 2. DYNAMIC ROW CALCULATION: Automatically computes rows based on menu size
+  const hasKulfi = MENU.some(it => it.slug === 'kulfi');
+  const normalItemsCount = MENU.filter(it => it.slug !== 'kulfi').length;
+  const rows = Math.ceil(normalItemsCount / 2) + (hasKulfi ? 1 : 0);
+  
+  // 3. HEIGHT CONSTRAINT: Perfect size to fit vertically
   const maxByHeight = Math.floor((layoutHeight - (rows - 1) * gap) / rows);
-  const size = Math.max(72, Math.min(180, maxByHeight));
+  
+  // 4. WIDTH CONSTRAINT: Ensure it doesn't overflow horizontally on narrow screens
+  // We look at the total width and make sure the 2-column menu doesn't steal more than 40% of the screen
+  const maxAvailableMenuW = window.innerWidth * 0.40;
+  const maxByWidth = Math.floor((maxAvailableMenuW - 12) / 2);
+  
+  // 5. AUTO-SCALE: Choose the size that safely satisfies BOTH height and width limits
+  const size = Math.max(72, Math.min(180, maxByHeight, maxByWidth));
+  
+  // Apply it instantly to the CSS grid layout
   document.documentElement.style.setProperty('--square-size', size + 'px');
 }
 
