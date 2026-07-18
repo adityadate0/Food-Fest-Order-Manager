@@ -571,6 +571,13 @@ function renderPlaced(orders){
     card.appendChild(items);
 
     const actions = document.createElement('div'); actions.className='card-actions';
+    // 🌟 ADD THIS: New instant completion button for the solo workflow
+    const completeDirect = document.createElement('button');
+    completeDirect.className = 'btn btn-sm btn-success fw-bold';
+    completeDirect.innerText = 'Complete';
+    completeDirect.onclick = () => collectOrder(o.orderNumber); 
+    actions.appendChild(completeDirect);
+
     const edit = document.createElement('button'); edit.className='btn btn-sm btn-outline-primary'; edit.innerText='Edit';
     edit.onclick = () => openEditOrderDialog(o);
     
@@ -712,7 +719,10 @@ function collectOrder(orderNumber){
     const items = [];
     data.orders.forEach(o=>{
       if(o.orderNumber === orderNumber){
-        o.items.forEach(it => { if(it.status === 'ready') items.push(it.id); });
+        // 🌟 CHANGED: Grab items if they are 'placed', 'in_progress', OR 'ready'
+        o.items.forEach(it => { 
+          if(it.status !== 'collected') items.push(it.id); 
+        });
       }
     });
 
