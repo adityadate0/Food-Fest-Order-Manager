@@ -280,6 +280,29 @@ io.on('connection', socket => {
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
 
+// 🌟 FIX: Removed duplicate const { exec } line from here completely!
+// API to check laptop battery hardware parameters remotely
+app.get('/laptop-battery', (req, res) => {
+  const cmd = `powershell -Command "Get-CimInstance -ClassName Win32_Battery | Select-Object -Property EstimatedChargeRemaining, BatteryStatus | ConvertTo-Json"`;
+  
+  exec(cmd, (err, stdout, stderr) => {
+    if (err || !stdout || stdout.trim() === "") {
+      return res.json({ percent: 100, pluggedIn: true, noBattery: true });
+    }
+    try {
+      const data = JSON.parse(stdout);
+      const battery = Array.isArray(data) ? data[0] : data;
+      
+      res.json({
+        percent: battery.EstimatedChargeRemaining || 100,
+        pluggedIn: battery.BatteryStatus !== 1
+      });
+    } catch (e) {
+      res.json({ percent: 100, pluggedIn: true });
+    }
+  });
+});
+
 server.listen(PORT, HOST, () => {
   console.log(`Server running on ${HOST}:${PORT}`);
   const startCommand = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'start' : 'xdg-open';

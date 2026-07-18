@@ -236,6 +236,11 @@ body{
     </div>
     
     <div class="controls">
+      
+      <span id="laptop-battery-indicator" class="badge bg-secondary d-flex align-items-center gap-1 px-2 py-2 fw-bold" style="font-size:0.9rem;">
+        💻 Laptop: --%
+      </span>
+      
       <button class="btn btn-outline-dark" onclick="openHistory()">History</button>
       <button class="btn btn-outline-secondary" onclick="refresh()">Refresh</button>
       <button class="btn btn-danger" onclick="quitApp()">Quit</button>
@@ -439,6 +444,37 @@ document.getElementById('confirmCancelBtn').onclick = () => {
   cancelModal.hide();
   setTimeout(refresh, 300);
 };
+
+function checkLaptopBattery() {
+  fetch('/laptop-battery')
+    .then(r => r.ok ? r.json() : Promise.reject())
+    .then(data => {
+      const badge = document.getElementById('laptop-battery-indicator');
+      if (!badge) return;
+      
+      if (data.noBattery) {
+        badge.className = "badge bg-secondary d-flex align-items-center gap-1 px-2 py-2 fw-bold";
+        badge.innerHTML = `💻 Server: Desktop (AC)`;
+        return;
+      }
+
+      let statusText = `💻 Laptop: ${data.percent}%`;
+      
+      if (data.pluggedIn) {
+        statusText += ' ⚡';
+        badge.className = "badge bg-success d-flex align-items-center gap-1 px-2 py-2 fw-bold";
+      } else {
+        // ⚠️ ALARM ALERTS: Instantly turns flashing red if the laptop loses its AC wall plugin connection!
+        statusText += ' ⚠️ UNPLUGGED!';
+        badge.className = "badge bg-danger d-flex align-items-center gap-1 px-2 py-2 fw-bold text-white shadow";
+        
+        // Minor visual attention grabber
+        badge.style.animation = "blink 1s steps(2, start) infinite";
+      }
+      badge.innerHTML = statusText;
+    })
+    .catch(() => console.log("Battery telemetry handshake offline..."));
+}
 
 function computeSquareSize(){
   const headerHeight = document.querySelector('.header').getBoundingClientRect().height + 8;
@@ -906,6 +942,9 @@ function init(){
   renderMenu();
   renderCartBadge();
   refresh();
+  // 🌟 Start checking battery status instantly on launch
+  checkLaptopBattery();
+  setInterval(checkLaptopBattery, 20000);
   setTimeout(()=> autoScalePlacedCards(), 120);
   setInterval(refresh, 500);
 }
