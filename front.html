@@ -598,11 +598,10 @@ function renderPlaced(orders){
     `;
     card.appendChild(meta);
     
-    // Dense presentation: Decodes name payload and binds note tokens to the right side seamlessly
+    // Clean presentation: Note is now heavily bolded and automatically capitalized
     const items = document.createElement('div'); 
     items.className='items my-2';
     items.innerHTML = o.items.map(it=> {
-      // 🌟 Parse composite names to separate raw food categories from user custom strings
       const parts = it.name.split(' || ');
       const displayName = parts[0];
       const itemNote = parts[1] || '';
@@ -612,7 +611,7 @@ function renderPlaced(orders){
           <span class="badge bg-secondary text-white me-2 px-2 py-0.5" style="font-size: 0.95rem; min-width: 32px; text-align: center;">${it.qty}</span>
           <span>
             ${displayName}
-            ${itemNote ? `<span class="badge bg-warning text-danger ms-2 px-2 py-0.5" style="font-size: 0.9rem; font-weight: 700; border: 1px solid #dc3545;">⚠️ ${itemNote}</span>` : ''}
+            ${itemNote ? `<span style="color: #dc3545; margin-left: 12px; font-weight: 800; text-transform: uppercase;">⚠️ ${itemNote}</span>` : ''}
           </span>
         </div>
       `;
